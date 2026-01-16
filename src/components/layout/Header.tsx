@@ -14,6 +14,8 @@ import {
   MenuItem,
   Divider,
   alpha,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -21,17 +23,22 @@ import {
   AccountCircle,
   Settings as SettingsIcon,
   Logout as LogoutIcon,
+  Menu as MenuIcon,
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'next/navigation';
 
 interface HeaderProps {
   title: string;
+  onMenuClick?: () => void;
+  onSidebarToggle?: () => void;
 }
 
-export default function Header({ title }: HeaderProps) {
+export default function Header({ title, onMenuClick, onSidebarToggle }: HeaderProps) {
   const { t, i18n } = useTranslation('common');
   const router = useRouter();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [user] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -72,12 +79,33 @@ export default function Header({ title }: HeaderProps) {
         borderColor: 'grey.200',
       }}
     >
-      <Toolbar sx={{ justifyContent: 'space-between' }}>
-        <Typography variant="h6" fontWeight={700} color="grey.800">
-          {title}
-        </Typography>
+      <Toolbar sx={{ justifyContent: 'space-between', gap: 1 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          {/* Menu Button - mobile: hamburger, desktop: toggle sidebar */}
+          <IconButton
+            color="inherit"
+            aria-label={isMobile ? 'open drawer' : 'toggle sidebar'}
+            edge="start"
+            onClick={isMobile ? onMenuClick : onSidebarToggle}
+            sx={{ mr: 1 }}
+          >
+            <MenuIcon />
+          </IconButton>
+          <Typography 
+            variant={isMobile ? 'body1' : 'h6'} 
+            fontWeight={700} 
+            color="grey.800"
+            sx={{
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {title}
+          </Typography>
+        </Box>
 
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.5, sm: 2 } }}>
           {/* Search */}
           <Box
             sx={{

@@ -73,19 +73,19 @@ export const assetService = {
   // Get asset by ID
   getAssetById: async (id: string): Promise<Asset> => {
     const response = await axiosInstance.get(`/assets/${id}`);
-    return response.data;
+    return response.data.data;
   },
 
   // Create new asset
   createAsset: async (data: AssetFormData): Promise<Asset> => {
     const response = await axiosInstance.post('/assets', data);
-    return response.data;
+    return response.data.data;
   },
 
   // Update asset
   updateAsset: async (id: string, data: Partial<AssetFormData>): Promise<Asset> => {
     const response = await axiosInstance.put(`/assets/${id}`, data);
-    return response.data;
+    return response.data.data;
   },
 
   // Delete asset

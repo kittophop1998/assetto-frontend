@@ -9,7 +9,6 @@ import {
   TableRow,
   TablePagination,
   Paper,
-  Box,
   Typography,
   CircularProgress,
 } from '@mui/material';
@@ -58,7 +57,7 @@ export default function DataTable({
 
   return (
     <Paper sx={{ width: '100%', overflow: 'hidden' }}>
-      <TableContainer>
+      <TableContainer sx={{ maxHeight: { xs: 'calc(100vh - 300px)', sm: 600 } }}>
         <Table stickyHeader>
           <TableHead>
             <TableRow>
@@ -71,6 +70,7 @@ export default function DataTable({
                     fontWeight: 600,
                     bgcolor: 'grey.50',
                     color: 'grey.700',
+                    whiteSpace: 'nowrap',
                   }}
                 >
                   {column.label}
@@ -97,7 +97,11 @@ export default function DataTable({
                   {columns.map((column) => {
                     const value = row[column.id];
                     return (
-                      <TableCell key={column.id} align={column.align || 'left'}>
+                      <TableCell 
+                        key={column.id} 
+                        align={column.align || 'left'}
+                        sx={{ whiteSpace: 'nowrap' }}
+                      >
                         {column.format ? column.format(value, row) : value}
                       </TableCell>
                     );
@@ -120,6 +124,9 @@ export default function DataTable({
           sx={{
             borderTop: 1,
             borderColor: 'grey.100',
+            '.MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows': {
+              fontSize: { xs: '0.75rem', sm: '0.875rem' },
+            },
           }}
         />
       )}

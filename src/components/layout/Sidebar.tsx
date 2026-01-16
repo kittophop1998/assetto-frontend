@@ -13,6 +13,8 @@ import {
   IconButton,
   Divider,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import {
   Dashboard as DashboardIcon,
@@ -37,11 +39,23 @@ interface MenuItem {
   path: string;
 }
 
-export default function Sidebar() {
+interface SidebarProps {
+  open?: boolean;
+  mobileOpen?: boolean;
+  onToggle?: () => void;
+  onMobileToggle?: () => void;
+}
+
+export default function Sidebar({ open: externalOpen, mobileOpen = false, onToggle, onMobileToggle }: SidebarProps) {
   const { t } = useTranslation('common');
   const router = useRouter();
   const pathname = usePathname();
-  const [isOpen, setIsOpen] = useState(true);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const [internalOpen, setInternalOpen] = useState(true);
+  
+  // ใช้ external open ถ้ามี ไม่งั้นใช้ internal open
+  const isOpen = externalOpen !== undefined ? externalOpen : internalOpen;
 
   const menuItems: MenuItem[] = [
     {
@@ -83,24 +97,22 @@ export default function Sidebar() {
 
   const handleNavigate = (path: string) => {
     router.push(path);
+    // ปิด mobile drawer หลังจากคลิกเมนู
+    if (isMobile && onMobileToggle) {
+      onMobileToggle();
+    }
   };
 
-  return (
-    <Drawer
-      variant="permanent"
-      sx={{
-        width: isOpen ? DRAWER_WIDTH : DRAWER_WIDTH_COLLAPSED,
-        flexShrink: 0,
-        '& .MuiDrawer-paper': {
-          width: isOpen ? DRAWER_WIDTH : DRAWER_WIDTH_COLLAPSED,
-          boxSizing: 'border-box',
-          borderRight: 1,
-          borderColor: 'grey.200',
-          transition: 'width 0.3s',
-          overflowX: 'hidden',
-        },
-      }}
-    >
+  const handleToggle = () => {
+    if (onToggle) {
+      onToggle();
+    } else {
+      setInternalOpen(!internalOpen);
+    }
+  };
+
+  const drawerContent = (
+    <>
       {/* Logo */}
       <Box
         sx={{
@@ -125,7 +137,7 @@ export default function Sidebar() {
         >
           <CategoryIcon sx={{ color: 'white', fontSize: 20 }} />
         </Box>
-        {isOpen && (
+        {(isOpen || isMobile) && (
           <Typography
             variant="h6"
             fontWeight={700}
@@ -158,12 +170,12 @@ export default function Sidebar() {
                   },
                   '& .MuiListItemIcon-root': {
                     color: isActive ? 'white' : 'grey.600',
-                    minWidth: isOpen ? 40 : 'auto',
+                    minWidth: (isOpen || isMobile) ? 40 : 'auto',
                   },
                 }}
               >
                 <ListItemIcon>{item.icon}</ListItemIcon>
-                {isOpen && (
+                {(isOpen || isMobile) && (
                   <ListItemText
                     primary={item.name}
                     primaryTypographyProps={{
@@ -178,21 +190,78 @@ export default function Sidebar() {
         })}
       </List>
 
-      {/* Toggle Button */}
-      <Divider />
-      <Box sx={{ p: 2, display: 'flex', justifyContent: 'center' }}>
-        <IconButton
-          onClick={() => setIsOpen(!isOpen)}
-          sx={{
-            color: 'grey.500',
-            '&:hover': {
-              color: 'grey.700',
-            },
-          }}
-        >
-          {isOpen ? <ChevronLeft /> : <ChevronRight />}
-        </IconButton>
-      </Box>
+      {/* Toggle Button - แสดงเฉพาะบน desktop */}
+      {!isMobile && (
+        <>
+          <Divider />
+          <Box sx={{ p: 2, display: 'flex', justifyContent: 'center' }}>
+            <IconButton
+              onClick={handleToggle}
+              sx={{
+                color: 'grey.500',
+                '&:hover': {
+                  color: 'grey.700',
+                },
+              }}
+            >
+              {isOpen ? <ChevronLeft /> : <ChevronRight />}
+            </IconButton>
+          </Box>
+        </>
+      )}
+    </>
+  );
+
+  // Mobile Drawer
+  if (isMobile) {
+    return (
+      <Drawer
+        variant="temporary"
+        open={mobileOpen}
+        onClose={onMobileToggle}
+        ModalProps={{
+          keepMounted: true, // Better open performance on mobile
+        }}
+        sx={{
+          display: { xs: 'block', md: 'none' },
+          '& .MuiDrawer-paper': {
+            width: DRAWER_WIDTH,
+            boxSizing: 'border-box',
+            borderRight: 1,
+            borderColor: 'grey.200',
+          },
+        }}
+      >
+        {drawerContent}
+      </Drawer>
+    );
+  }
+
+  // Desktop Drawer
+  return (
+    <Drawer
+      variant="permanent"
+      sx={{
+        display: { xs: 'none', md: 'block' },
+        width: isOpen ? DRAWER_WIDTH : DRAWER_WIDTH_COLLAPSED,
+        flexShrink: 0,
+        '& .MuiDrawer-paper': {
+          width: isOpen ? DRAWER_WIDTH : DRAWER_WIDTH_COLLAPSED,
+          boxSizing: 'border-box',
+          borderRight: 1,
+          borderColor: 'grey.200',
+          transition: theme.transitions.create('width', {
+            easing: theme.transitions.easing.sharp,
+            duration: theme.transitions.duration.enteringScreen,
+          }),
+          overflowX: 'hidden',
+          position: 'fixed',
+          height: '100vh',
+          zIndex: theme.zIndex.drawer,
+        },
+      }}
+    >
+      {drawerContent}
     </Drawer>
   );
 }

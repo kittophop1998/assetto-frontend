@@ -153,16 +153,34 @@ export default function AssetsPage() {
       id: 'actions',
       label: t('common.actions'),
       align: 'center',
-      minWidth: 120,
+      minWidth: 150,
       format: (_, row) => (
-        <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
-          <IconButton size="small" color="primary" onClick={() => router.push(`/assets/${row.id}`)}>
+        <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center', flexWrap: 'nowrap' }}>
+          <IconButton 
+            size="small" 
+            color="primary" 
+            onClick={() => router.push(`/assets/${row.id}`)}
+            sx={{ minWidth: 'auto' }}
+          >
             <VisibilityIcon fontSize="small" />
           </IconButton>
-          <IconButton size="small" color="primary" onClick={() => router.push(`/assets/${row.id}/edit`)}>
+          <IconButton 
+            size="small" 
+            color="primary" 
+            onClick={() => {
+              sessionStorage.setItem('editAssetData', JSON.stringify(row));
+              router.push(`/assets/${row.id}/edit`);
+            }}
+            sx={{ minWidth: 'auto' }}
+          >
             <EditIcon fontSize="small" />
           </IconButton>
-          <IconButton size="small" color="error" onClick={() => handleDelete(row.id)}>
+          <IconButton 
+            size="small" 
+            color="error" 
+            onClick={() => handleDelete(row.id)}
+            sx={{ minWidth: 'auto' }}
+          >
             <DeleteIcon fontSize="small" />
           </IconButton>
         </Box>
@@ -172,25 +190,25 @@ export default function AssetsPage() {
 
   return (
     <MainLayout title={t('asset.title')}>
-      <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <Box sx={{ mb: { xs: 2, sm: 3 }, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexDirection: { xs: 'column', sm: 'row' }, gap: 2 }}>
         <Box>
-          <Box sx={{ typography: 'h5', fontWeight: 700, mb: 0.5 }}>{t('asset.list')}</Box>
-          <Box sx={{ typography: 'body2', color: 'text.secondary' }}>จัดการทรัพย์สินทั้งหมดในระบบ</Box>
+          <Box sx={{ typography: { xs: 'h6', sm: 'h5' }, fontWeight: 700, mb: 0.5 }}>{t('asset.list')}</Box>
+          <Box sx={{ typography: 'body2', color: 'text.secondary', display: { xs: 'none', sm: 'block' } }}>จัดการทรัพย์สินทั้งหมดในระบบ</Box>
         </Box>
       </Box>
 
       {/* Toolbar */}
       <Box
         sx={{
-          mb: 3,
+          mb: { xs: 2, sm: 3 },
           display: 'flex',
-          gap: 2,
+          gap: { xs: 1, sm: 2 },
           flexWrap: 'wrap',
           justifyContent: 'space-between',
           alignItems: 'center',
         }}
       >
-        <Box sx={{ display: 'flex', gap: 2 }}>
+        <Box sx={{ display: 'flex', gap: { xs: 1, sm: 2 }, flexWrap: 'wrap', flex: 1 }}>
           <TextField
             placeholder={t('common.search')}
             size="small"
@@ -203,15 +221,24 @@ export default function AssetsPage() {
                 </InputAdornment>
               ),
             }}
-            sx={{ width: 300 }}
+            sx={{ width: { xs: '100%', sm: 300 } }}
           />
           <Button
             variant="outlined"
             startIcon={<FilterIcon />}
             onClick={(e) => setAnchorEl(e.currentTarget)}
+            size="small"
+            sx={{ display: { xs: 'none', sm: 'flex' } }}
           >
             {t('common.filter')}
           </Button>
+          <IconButton
+            color="primary"
+            onClick={(e) => setAnchorEl(e.currentTarget)}
+            sx={{ display: { xs: 'flex', sm: 'none' } }}
+          >
+            <FilterIcon />
+          </IconButton>
           <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={() => setAnchorEl(null)}>
             <MenuItem onClick={() => setAnchorEl(null)}>All Categories</MenuItem>
             <MenuItem onClick={() => setAnchorEl(null)}>IT</MenuItem>
@@ -220,12 +247,24 @@ export default function AssetsPage() {
           </Menu>
         </Box>
 
-        <Box sx={{ display: 'flex', gap: 2 }}>
-          <Button variant="outlined" startIcon={<FileDownloadIcon />} onClick={handleExport}>
-            {t('common.export')}
+        <Box sx={{ display: 'flex', gap: { xs: 1, sm: 2 } }}>
+          <Button 
+            variant="outlined" 
+            startIcon={<FileDownloadIcon sx={{ display: { xs: 'none', sm: 'block' } }} />} 
+            onClick={handleExport}
+            size="small"
+          >
+            <Box sx={{ display: { xs: 'none', sm: 'block' } }}>{t('common.export')}</Box>
+            <FileDownloadIcon sx={{ display: { xs: 'block', sm: 'none' } }} />
           </Button>
-          <Button variant="contained" startIcon={<AddIcon />} onClick={() => router.push('/assets/new')}>
-            {t('asset.add')}
+          <Button 
+            variant="contained" 
+            startIcon={<AddIcon sx={{ display: { xs: 'none', sm: 'block' } }} />} 
+            onClick={() => router.push('/assets/new')}
+            size="small"
+          >
+            <Box sx={{ display: { xs: 'none', sm: 'block' } }}>{t('asset.add')}</Box>
+            <AddIcon sx={{ display: { xs: 'block', sm: 'none' } }} />
           </Button>
         </Box>
       </Box>
