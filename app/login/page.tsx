@@ -2,65 +2,92 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
-  Card,
-  CardContent,
-  TextField,
   Button,
+  TextField,
   Typography,
-  FormControlLabel,
-  Checkbox,
+  Container,
+  Paper,
   Alert,
-  CircularProgress,
+  InputAdornment,
+  IconButton,
+  useTheme,
 } from '@mui/material';
-import { Category as CategoryIcon } from '@mui/icons-material';
-import { useTranslation } from 'react-i18next';
+import {
+  Visibility,
+  VisibilityOff,
+  Login as LoginIcon,
+  Layers as LayersIcon,
+} from '@mui/icons-material';
 import { authService } from '@/src/services/authService';
 
 export default function LoginPage() {
-  const { t } = useTranslation('common');
   const router = useRouter();
+  const theme = useTheme();
+  const { t } = useTranslation('common');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
+  const [messageType, setMessageType] = useState<'success' | 'error' | ''>('');
+  const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     username: '',
     password: '',
-    rememberMe: false,
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, checked } = e.target;
+    const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: name === 'rememberMe' ? checked : value,
+      [name]: value,
     }));
-    setError('');
+    setMessage('');
+    setMessageType('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
+    setMessage('');
+    setMessageType('');
 
     try {
-      const response = await authService.login({
-        username: formData.username,
-        password: formData.password,
-      });
+      // TODO: Integrate with real auth service
+      // const response = await authService.login({
+      //   username: formData.username,
+      //   password: formData.password,
+      // });
 
-      // Save to localStorage
-      localStorage.setItem('accessToken', response.accessToken);
-      localStorage.setItem('user', JSON.stringify(response.user));
+      // localStorage.setItem('accessToken', response.accessToken);
+      // localStorage.setItem('user', JSON.stringify(response.user));
 
-      // Redirect to dashboard
-      router.push('/dashboard');
+      // Mock authentication
+      if (formData.username !== 'admin' || formData.password !== '123456') {
+        throw new Error(t('auth.invalidCredentials'));
+      }
+      // ----
+
+      localStorage.setItem('accessToken', 'mocked-access-token');
+
+      // Show success message
+      setMessageType('success');
+      setMessage(t('auth.loggingIn'));
+
+      // Redirect after short delay
+      setTimeout(() => {
+        setMessage(t('auth.welcomeUser', { username: formData.username }));
+        setTimeout(() => {
+          router.push('/dashboard');
+        }, 800);
+      }, 800);
     } catch (err: unknown) {
-      const errorMessage = 
+      const errorMessage =
         err && typeof err === 'object' && 'response' in err && err.response && typeof err.response === 'object' && 'data' in err.response && err.response.data && typeof err.response.data === 'object' && 'message' in err.response.data
           ? String(err.response.data.message)
-          : 'Login failed. Please check your credentials.';
-      setError(errorMessage);
+          : t('auth.loginError');
+      setMessageType('error');
+      setMessage(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -73,140 +100,177 @@ export default function LoginPage() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        bgcolor: 'grey.50',
-        backgroundImage: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        position: 'relative',
-        '&::before': {
-          content: '""',
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          bgcolor: 'rgba(255, 255, 255, 0.05)',
-        },
+        background: `linear-gradient(135deg, ${theme.palette.primary.light}15 0%, ${theme.palette.primary.main}15 100%)`,
+        p: 2,
       }}
     >
-      <Card
-        sx={{
-          maxWidth: 420,
-          width: '100%',
-          mx: 2,
-          boxShadow: 8,
-          position: 'relative',
-          zIndex: 1,
-        }}
-      >
-        <CardContent sx={{ p: 4 }}>
-          {/* Logo & Title */}
-          <Box sx={{ textAlign: 'center', mb: 4 }}>
+      <Container maxWidth="lg">
+        <Paper
+          elevation={8}
+          sx={{
+            display: 'flex',
+            flexDirection: { xs: 'column', md: 'row' },
+            borderRadius: 4,
+            overflow: 'hidden',
+            minHeight: { xs: 'auto', md: '600px' },
+          }}
+        >
+          {/* Left Side: Welcome Section */}
+          <Box
+            sx={{
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              p: { xs: 6, md: 8 },
+              background: `linear-gradient(135deg, ${theme.palette.primary.light} 0%, ${theme.palette.primary.main} 100%)`,
+              color: 'white',
+              textAlign: 'center',
+            }}
+          >
             <Box
               sx={{
-                width: 64,
-                height: 64,
-                bgcolor: 'primary.main',
-                borderRadius: 2,
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                mb: 2,
+                bgcolor: 'rgba(255, 255, 255, 0.2)',
+                borderRadius: '50%',
+                p: 3,
+                mb: 3,
+                backdropFilter: 'blur(10px)',
               }}
             >
-              <CategoryIcon sx={{ color: 'white', fontSize: 36 }} />
+              <LayersIcon sx={{ fontSize: 80 }} />
             </Box>
-            <Typography variant="h5" fontWeight={700} gutterBottom>
-              {t('app.name')}
+            <Typography variant="h3" fontWeight="bold" gutterBottom>
+              {t('auth.welcome')}
             </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {t('app.title')}
+            <Typography variant="body1" sx={{ opacity: 0.9 }}>
+              {t('auth.welcomeMessage')}
             </Typography>
           </Box>
 
-          {/* Login Form */}
-          <form onSubmit={handleSubmit}>
-            <Box sx={{ mb: 3 }}>
-              <TextField
-                fullWidth
-                name="username"
-                label={t('auth.username')}
-                value={formData.username}
-                onChange={handleChange}
-                disabled={loading}
-                autoComplete="username"
-                autoFocus
-              />
-            </Box>
-
-            <Box sx={{ mb: 2 }}>
-              <TextField
-                fullWidth
-                name="password"
-                type="password"
-                label={t('auth.password')}
-                value={formData.password}
-                onChange={handleChange}
-                disabled={loading}
-                autoComplete="current-password"
-              />
-            </Box>
-
-            <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    name="rememberMe"
-                    checked={formData.rememberMe}
-                    onChange={handleChange}
-                    disabled={loading}
-                  />
-                }
-                label={<Typography variant="body2">{t('auth.rememberMe')}</Typography>}
-              />
-              <Typography
-                variant="body2"
-                color="primary"
-                sx={{ cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}
-              >
-                {t('auth.forgotPassword')}
+          {/* Right Side: Login Form */}
+          <Box
+            sx={{
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              p: { xs: 4, md: 8 },
+              bgcolor: 'background.paper',
+            }}
+          >
+            <Box sx={{ mb: 4 }}>
+              <Typography variant="h4" fontWeight="600" color="text.primary" gutterBottom>
+                {t('auth.loginTitle')}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {t('auth.loginSubtitle')}
               </Typography>
             </Box>
 
-            {error && (
-              <Alert severity="error" sx={{ mb: 3 }}>
-                {error}
+            <Box component="form" onSubmit={handleSubmit} noValidate>
+              {/* Username Field */}
+              <TextField
+                fullWidth
+                label={t('auth.username')}
+                name="username"
+                required
+                value={formData.username}
+                onChange={handleChange}
+                disabled={loading}
+                placeholder={t('auth.usernamePlaceholder')}
+                margin="normal"
+                autoComplete="username"
+                autoFocus
+                sx={{ mb: 2 }}
+              />
+
+              {/* Password Field */}
+              <TextField
+                fullWidth
+                label={t('auth.password')}
+                name="password"
+                type={showPassword ? 'text' : 'password'}
+                required
+                value={formData.password}
+                onChange={handleChange}
+                disabled={loading}
+                placeholder={t('auth.passwordPlaceholder')}
+                margin="normal"
+                autoComplete="current-password"
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        aria-label="toggle password visibility"
+                        onClick={() => setShowPassword(!showPassword)}
+                        edge="end"
+                        disabled={loading}
+                      >
+                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+                sx={{ mb: 3 }}
+              />
+
+              {/* Login Button */}
+              <Button
+                type="submit"
+                fullWidth
+                variant="contained"
+                size="large"
+                disabled={loading}
+                startIcon={<LoginIcon />}
+                sx={{
+                  py: 1.5,
+                  fontSize: '1rem',
+                  fontWeight: 600,
+                  boxShadow: 3,
+                  '&:hover': {
+                    boxShadow: 6,
+                  },
+                }}
+              >
+                {loading ? t('auth.loggingIn') : t('auth.login')}
+              </Button>
+            </Box>
+
+            {/* Message Box */}
+            {message && (
+              <Alert
+                severity={messageType === 'success' ? 'success' : 'error'}
+                sx={{ mt: 3 }}
+              >
+                {message}
               </Alert>
             )}
 
-            <Button
-              fullWidth
-              type="submit"
-              variant="contained"
-              size="large"
-              disabled={loading || !formData.username || !formData.password}
+            {/* Mock Credentials Info */}
+            <Box
               sx={{
-                py: 1.5,
-                fontWeight: 600,
-                textTransform: 'none',
-                fontSize: 16,
+                mt: 4,
+                p: 2,
+                bgcolor: 'info.lighter',
+                borderRadius: 2,
+                border: '1px solid',
+                borderColor: 'info.light',
               }}
             >
-              {loading ? <CircularProgress size={24} color="inherit" /> : t('auth.login')}
-            </Button>
-          </form>
-
-          {/* Demo Credentials */}
-          <Box sx={{ mt: 4, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
-            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
-              Demo Credentials:
-            </Typography>
-            <Typography variant="body2" fontFamily="monospace">
-              Username: <strong>admin</strong>
-              <br />
-              Password: <strong>admin123</strong>
-            </Typography>
+              <Typography variant="caption" color="info.main" fontWeight="600" display="block" gutterBottom>
+                🔐 Mock Credentials for Testing
+              </Typography>
+              <Typography variant="caption" color="text.secondary" component="div">
+                <strong>Username:</strong> admin
+              </Typography>
+              <Typography variant="caption" color="text.secondary" component="div">
+                <strong>Password:</strong> password123
+              </Typography>
+            </Box>
           </Box>
-        </CardContent>
-      </Card>
+        </Paper>
+      </Container>
     </Box>
   );
 }

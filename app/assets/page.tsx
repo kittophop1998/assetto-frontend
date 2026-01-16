@@ -49,71 +49,13 @@ export default function AssetsPage() {
         limit: rowsPerPage,
         search,
       });
-      setAssets(response.data);
-      setTotalRows(response.total);
+      setAssets(response.data || []);
+      setTotalRows(response.total || 0);
     } catch (error) {
       console.error('Failed to load assets:', error);
-      // Mock data for demo
-      const mockAssets: Asset[] = [
-        {
-          id: '1',
-          code: 'AST001',
-          name: 'MacBook Pro 14"',
-          category: 'IT',
-          unit: 'เครื่อง',
-          totalQuantity: 10,
-          availableQuantity: 3,
-          inUseQuantity: 7,
-          departmentId: '1',
-          departmentName: 'IT',
-          minimumStock: 2,
-          status: 'Active',
-        },
-        {
-          id: '2',
-          code: 'AST002',
-          name: 'Ergonomic Chair',
-          category: 'Office',
-          unit: 'ตัว',
-          totalQuantity: 50,
-          availableQuantity: 12,
-          inUseQuantity: 38,
-          departmentId: '2',
-          departmentName: 'HR',
-          minimumStock: 10,
-          status: 'Active',
-        },
-        {
-          id: '3',
-          code: 'AST003',
-          name: 'Dell Monitor 27"',
-          category: 'IT',
-          unit: 'จอ',
-          totalQuantity: 20,
-          availableQuantity: 0,
-          inUseQuantity: 20,
-          departmentId: '1',
-          departmentName: 'IT',
-          minimumStock: 5,
-          status: 'In Use',
-        },
-        {
-          id: '4',
-          code: 'AST004',
-          name: 'Paper A4',
-          category: 'Supplies',
-          unit: 'กล่อง',
-          totalQuantity: 100,
-          availableQuantity: 5,
-          inUseQuantity: 95,
-          departmentId: '3',
-          departmentName: 'Admin',
-          minimumStock: 20,
-          status: 'Low Stock',
-        },
-      ];
-      setAssets(mockAssets);
-      setTotalRows(mockAssets.length);
+      setAssets([]);
+      setTotalRows(0);
+      // TODO: Show error notification to user
     } finally {
       setLoading(false);
     }

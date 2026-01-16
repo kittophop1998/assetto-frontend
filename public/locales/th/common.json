@@ -1,7 +1,7 @@
 {
   "app": {
-    "name": "AssetFlow",
-    "title": "ระบบจัดการทรัพย์สิน"
+    "name": "Assetto Manajimento",
+    "title": "ระบบจัดการทรัพย์สิน (アセット・マナジメント)"
   },
   "menu": {
     "dashboard": "แดชบอร์ด",
@@ -19,7 +19,17 @@
     "username": "ชื่อผู้ใช้",
     "password": "รหัสผ่าน",
     "rememberMe": "จดจำการเข้าสู่ระบบ",
-    "forgotPassword": "ลืมรหัสผ่าน?"
+    "forgotPassword": "ลืมรหัสผ่าน?",
+    "welcome": "ยินดีต้อนรับ",
+    "welcomeMessage": "จัดการทุกอย่างได้ง่ายขึ้นผ่านระบบของเรา",
+    "loginTitle": "เข้าสู่ระบบ",
+    "loginSubtitle": "กรุณากรอกข้อมูลเพื่อเริ่มต้นใช้งาน",
+    "loggingIn": "กำลังเข้าสู่ระบบ...",
+    "loginSuccess": "เข้าสู่ระบบสำเร็จ",
+    "loginError": "เข้าสู่ระบบไม่สำเร็จ กรุณาตรวจสอบชื่อผู้ใช้และรหัสผ่าน",
+    "welcomeUser": "ยินดีต้อนรับคุณ {{username}}",
+    "usernamePlaceholder": "กรอกชื่อผู้ใช้",
+    "passwordPlaceholder": "กรอกรหัสผ่าน"
   },
   "dashboard": {
     "title": "แดชบอร์ด",

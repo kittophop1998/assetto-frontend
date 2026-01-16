@@ -5,6 +5,7 @@ export interface Asset {
   code: string;
   name: string;
   category: string;
+  categoryId: number;
   description?: string;
   unit: string;
   totalQuantity: number;
@@ -13,7 +14,7 @@ export interface Asset {
   costPerUnit?: number;
   supplier?: string;
   purchaseDate?: string;
-  departmentId: string;
+  departmentId: string | number;
   departmentName?: string;
   minimumStock: number;
   remark?: string;
@@ -23,17 +24,20 @@ export interface Asset {
 }
 
 export interface AssetFormData {
-  code?: string;
+  code: string;
   name: string;
-  category: string;
+  categoryId: number;
   description?: string;
   unit: string;
   totalQuantity: number;
+  availableQuantity?: number;
+  inUseQuantity?: number;
+  minimumStock: number;
+  status?: string;
+  departmentId: number;
+  purchaseDate?: string;
   costPerUnit?: number;
   supplier?: string;
-  purchaseDate?: string;
-  departmentId: string;
-  minimumStock: number;
   remark?: string;
 }
 

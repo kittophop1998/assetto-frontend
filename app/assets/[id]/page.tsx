@@ -4,64 +4,58 @@ import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { Box, Card, CardContent, TextField, Button, MenuItem, Typography } from '@mui/material';
 import { Save as SaveIcon, ArrowBack as ArrowBackIcon } from '@mui/icons-material';
-import { useTranslation } from 'react-i18next';
 import { AssetFormData, assetService } from '@/src/services/assetService';
-import { departmentService } from '@/src/services/departmentService';
 import MainLayout from '@/src/components/layout/MainLayout';
 
 export default function AssetFormPage() {
-  const { t } = useTranslation('common');
   const router = useRouter();
   const params = useParams();
   const isEdit = params?.id && params.id !== 'new';
 
   const [loading, setLoading] = useState(false);
-  const [departments, setDepartments] = useState<any[]>([]);
   const [formData, setFormData] = useState<AssetFormData>({
+    code: '',
     name: '',
-    category: '',
+    categoryId: 0,
     description: '',
-    unit: '',
+    unit: 'unit',
     totalQuantity: 0,
+    availableQuantity: 0,
+    inUseQuantity: 0,
+    minimumStock: 0,
+    status: 'Active',
+    departmentId: 0,
+    purchaseDate: '',
     costPerUnit: 0,
     supplier: '',
-    purchaseDate: '',
-    departmentId: '',
-    minimumStock: 0,
     remark: '',
   });
 
   useEffect(() => {
-    loadDepartments();
     if (isEdit) {
       loadAsset();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const loadDepartments = async () => {
-    try {
-      const data = await departmentService.getDepartments();
-      setDepartments(data);
-    } catch (error) {
-      console.error('Failed to load departments:', error);
-    }
-  };
-
   const loadAsset = async () => {
     try {
       const asset = await assetService.getAssetById(params.id as string);
       setFormData({
+        code: asset.code,
         name: asset.name,
-        category: asset.category,
+        categoryId: asset.categoryId,
         description: asset.description || '',
         unit: asset.unit,
         totalQuantity: asset.totalQuantity,
+        availableQuantity: asset.availableQuantity,
+        inUseQuantity: asset.inUseQuantity,
+        minimumStock: asset.minimumStock,
+        status: asset.status,
+        departmentId: typeof asset.departmentId === 'string' ? parseInt(asset.departmentId) : asset.departmentId,
+        purchaseDate: asset.purchaseDate || '',
         costPerUnit: asset.costPerUnit || 0,
         supplier: asset.supplier || '',
-        purchaseDate: asset.purchaseDate || '',
-        departmentId: asset.departmentId,
-        minimumStock: asset.minimumStock,
         remark: asset.remark || '',
       });
     } catch (error) {
@@ -73,7 +67,9 @@ export default function AssetFormPage() {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: ['totalQuantity', 'costPerUnit', 'minimumStock'].includes(name) ? Number(value) : value,
+      [name]: ['totalQuantity', 'availableQuantity', 'inUseQuantity', 'costPerUnit', 'minimumStock', 'categoryId', 'departmentId'].includes(name) 
+        ? Number(value) 
+        : value,
     }));
   };
 
@@ -97,13 +93,13 @@ export default function AssetFormPage() {
   };
 
   return (
-    <MainLayout title={isEdit ? t('asset.edit') : t('asset.add')}>
+    <MainLayout title={isEdit ? 'แก้ไขสินทรัพย์' : 'เพิ่มสินทรัพย์'}>
       <Box sx={{ mb: 3 }}>
         <Button startIcon={<ArrowBackIcon />} onClick={() => router.back()} sx={{ mb: 2 }}>
-          {t('common.back')}
+          ย้อนกลับ
         </Button>
         <Typography variant="h5" fontWeight={700}>
-          {isEdit ? t('asset.edit') : t('asset.add')}
+          {isEdit ? 'แก้ไขสินทรัพย์' : 'เพิ่มสินทรัพย์'}
         </Typography>
       </Box>
 
@@ -115,7 +111,17 @@ export default function AssetFormPage() {
               <TextField
                 fullWidth
                 required
-                label={t('asset.name')}
+                label="รหัสทรัพย์สิน"
+                name="code"
+                value={formData.code}
+                onChange={handleChange}
+                placeholder="AST-001"
+              />
+
+              <TextField
+                fullWidth
+                required
+                label="ชื่อสินทรัพย์"
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
@@ -125,23 +131,37 @@ export default function AssetFormPage() {
                 fullWidth
                 required
                 select
-                label={t('asset.category')}
-                name="category"
-                value={formData.category}
+                label="หมวดหมู่"
+                name="categoryId"
+                value={formData.categoryId}
                 onChange={handleChange}
               >
-                <MenuItem value="IT">IT</MenuItem>
-                <MenuItem value="Office">Office</MenuItem>
-                <MenuItem value="Supplies">Supplies</MenuItem>
-                <MenuItem value="Tools">Tools</MenuItem>
+                <MenuItem value={0}>เลือกหมวดหมู่</MenuItem>
+                <MenuItem value={1}>เครื่องมือ</MenuItem>
+                <MenuItem value={2}>อุปกรณ์ IT</MenuItem>
+                <MenuItem value={3}>เฟอร์นิเจอร์</MenuItem>
               </TextField>
 
-              <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 2' } }}>
+              <TextField
+                fullWidth
+                required
+                select
+                label="หน่วย"
+                name="unit"
+                value={formData.unit}
+                onChange={handleChange}
+              >
+                <MenuItem value="unit">ชิ้น (unit)</MenuItem>
+                <MenuItem value="box">กล่อง (box)</MenuItem>
+                <MenuItem value="set">ชุด (set)</MenuItem>
+              </TextField>
+
+              <Box sx={{ gridColumn: '1 / -1' }}>
                 <TextField
                   fullWidth
                   multiline
                   rows={3}
-                  label={t('asset.description')}
+                  label="รายละเอียด"
                   name="description"
                   value={formData.description}
                   onChange={handleChange}
@@ -151,18 +171,8 @@ export default function AssetFormPage() {
               <TextField
                 fullWidth
                 required
-                label={t('asset.unit')}
-                name="unit"
-                value={formData.unit}
-                onChange={handleChange}
-                placeholder="เครื่อง, ชิ้น, กล่อง"
-              />
-
-              <TextField
-                fullWidth
-                required
                 type="number"
-                label={t('asset.quantity')}
+                label="จำนวนทั้งหมด"
                 name="totalQuantity"
                 value={formData.totalQuantity}
                 onChange={handleChange}
@@ -171,8 +181,31 @@ export default function AssetFormPage() {
 
               <TextField
                 fullWidth
+                required
                 type="number"
-                label={t('asset.minimumStock')}
+                label="จำนวนคงเหลือ"
+                name="availableQuantity"
+                value={formData.availableQuantity}
+                onChange={handleChange}
+                inputProps={{ min: 0 }}
+              />
+
+              <TextField
+                fullWidth
+                required
+                type="number"
+                label="จำนวนที่ใช้งาน"
+                name="inUseQuantity"
+                value={formData.inUseQuantity}
+                onChange={handleChange}
+                inputProps={{ min: 0 }}
+              />
+
+              <TextField
+                fullWidth
+                required
+                type="number"
+                label="จำนวนขั้นต่ำ"
                 name="minimumStock"
                 value={formData.minimumStock}
                 onChange={handleChange}
@@ -181,26 +214,35 @@ export default function AssetFormPage() {
 
               <TextField
                 fullWidth
+                required
+                select
+                label="สถานะ"
+                name="status"
+                value={formData.status}
+                onChange={handleChange}
+              >
+                <MenuItem value="Active">Active</MenuItem>
+                <MenuItem value="In Use">In Use</MenuItem>
+                <MenuItem value="Low Stock">Low Stock</MenuItem>
+                <MenuItem value="Disposed">Disposed</MenuItem>
+              </TextField>
+
+              <TextField
+                fullWidth
+                required
                 type="number"
-                label={t('asset.costPerUnit')}
-                name="costPerUnit"
-                value={formData.costPerUnit}
+                label="แผนก ID"
+                name="departmentId"
+                value={formData.departmentId}
                 onChange={handleChange}
-                inputProps={{ min: 0, step: 0.01 }}
+                inputProps={{ min: 1 }}
               />
 
               <TextField
                 fullWidth
-                label={t('asset.supplier')}
-                name="supplier"
-                value={formData.supplier}
-                onChange={handleChange}
-              />
-
-              <TextField
-                fullWidth
+                required
                 type="date"
-                label={t('asset.purchaseDate')}
+                label="วันที่จัดซื้อ"
                 name="purchaseDate"
                 value={formData.purchaseDate}
                 onChange={handleChange}
@@ -210,25 +252,28 @@ export default function AssetFormPage() {
               <TextField
                 fullWidth
                 required
-                select
-                label={t('asset.department')}
-                name="departmentId"
-                value={formData.departmentId}
+                type="number"
+                label="ราคาต่อหน่วย"
+                name="costPerUnit"
+                value={formData.costPerUnit}
                 onChange={handleChange}
-              >
-                {departments.map((dept: any) => (
-                  <MenuItem key={dept.id} value={dept.id}>
-                    {dept.name}
-                  </MenuItem>
-                ))}
-              </TextField>
+                inputProps={{ min: 0, step: 0.01 }}
+              />
+
+              <TextField
+                fullWidth
+                label="ผู้จัดจำหน่าย"
+                name="supplier"
+                value={formData.supplier}
+                onChange={handleChange}
+              />
 
               <Box sx={{ gridColumn: '1 / -1' }}>
                 <TextField
                   fullWidth
                   multiline
                   rows={2}
-                  label={t('asset.remark')}
+                  label="หมายเหตุ"
                   name="remark"
                   value={formData.remark}
                   onChange={handleChange}
@@ -237,10 +282,10 @@ export default function AssetFormPage() {
 
               <Box sx={{ gridColumn: '1 / -1', display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
                 <Button variant="outlined" onClick={() => router.back()} disabled={loading}>
-                  {t('common.cancel')}
+                  ยกเลิก
                 </Button>
                 <Button type="submit" variant="contained" startIcon={<SaveIcon />} disabled={loading}>
-                  {loading ? t('common.loading') : t('common.save')}
+                  {loading ? 'กำลังบันทึก...' : 'บันทึก'}
                 </Button>
               </Box>
             </Box>

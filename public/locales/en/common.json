@@ -1,7 +1,7 @@
 {
   "app": {
-    "name": "AssetFlow",
-    "title": "Asset Management System"
+    "name": "Assetto Manajimento",
+    "title": "アセット・マナジメント"
   },
   "menu": {
     "dashboard": "Dashboard",
@@ -19,7 +19,17 @@
     "username": "Username",
     "password": "Password",
     "rememberMe": "Remember me",
-    "forgotPassword": "Forgot Password?"
+    "forgotPassword": "Forgot Password?",
+    "welcome": "Welcome",
+    "welcomeMessage": "Manage everything easier through our system",
+    "loginTitle": "Login",
+    "loginSubtitle": "Please enter your credentials to start",
+    "loggingIn": "Logging in...",
+    "loginSuccess": "Login successful",
+    "loginError": "Login failed. Please check your username and password",
+    "welcomeUser": "Welcome {{username}}",
+    "usernamePlaceholder": "Enter username",
+    "passwordPlaceholder": "Enter password"
   },
   "dashboard": {
     "title": "Dashboard",
