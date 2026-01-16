@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { Box, Card, CardContent, TextField, Button, MenuItem, Typography } from '@mui/material';
 import { Save as SaveIcon, ArrowBack as ArrowBackIcon } from '@mui/icons-material';
 import { AssetFormData, assetService } from '@/src/services/assetService';
+import { masterService, Department, Category } from '@/src/services/masterService';
 import MainLayout from '@/src/components/layout/MainLayout';
 
 export default function AssetFormPage() {
@@ -13,6 +14,8 @@ export default function AssetFormPage() {
   const isEdit = params?.id && params.id !== 'new';
 
   const [loading, setLoading] = useState(false);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [formData, setFormData] = useState<AssetFormData>({
     code: '',
     name: '',
@@ -32,11 +35,22 @@ export default function AssetFormPage() {
   });
 
   useEffect(() => {
+    loadMasterData();
     if (isEdit) {
       loadAsset();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const loadMasterData = async () => {
+    try {
+      const masterData = await masterService.getMasterData();
+      setDepartments(masterData.departments);
+      setCategories(masterData.categories);
+    } catch (error) {
+      console.error('Failed to load master data:', error);
+    }
+  };
 
   const loadAsset = async () => {
     try {
@@ -137,9 +151,11 @@ export default function AssetFormPage() {
                 onChange={handleChange}
               >
                 <MenuItem value={0}>เลือกหมวดหมู่</MenuItem>
-                <MenuItem value={1}>เครื่องมือ</MenuItem>
-                <MenuItem value={2}>อุปกรณ์ IT</MenuItem>
-                <MenuItem value={3}>เฟอร์นิเจอร์</MenuItem>
+                {categories.map((category) => (
+                  <MenuItem key={category.id} value={category.id}>
+                    {category.name}
+                  </MenuItem>
+                ))}
               </TextField>
 
               <TextField
@@ -230,13 +246,19 @@ export default function AssetFormPage() {
               <TextField
                 fullWidth
                 required
-                type="number"
-                label="แผนก ID"
+                select
+                label="แผนก"
                 name="departmentId"
                 value={formData.departmentId}
                 onChange={handleChange}
-                inputProps={{ min: 1 }}
-              />
+              >
+                <MenuItem value={0}>เลือกแผนก</MenuItem>
+                {departments.map((department) => (
+                  <MenuItem key={department.id} value={department.id}>
+                    {department.name}
+                  </MenuItem>
+                ))}
+              </TextField>
 
               <TextField
                 fullWidth
