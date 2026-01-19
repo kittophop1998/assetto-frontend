@@ -13,6 +13,7 @@ type Status =
 
 interface StatusBadgeProps {
   status: Status;
+  label?: string;
 }
 
 const statusConfig: Record<
@@ -30,12 +31,12 @@ const statusConfig: Record<
   Reviewed: { color: 'secondary', label: 'Reviewed' },
 };
 
-export default function StatusBadge({ status }: StatusBadgeProps) {
+export default function StatusBadge({ status, label }: StatusBadgeProps) {
   const config = statusConfig[status] || { color: 'default' as const, label: status };
 
   return (
     <Chip
-      label={config.label}
+      label={label || config.label}
       color={config.color}
       size="small"
       sx={{
