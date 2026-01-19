@@ -161,6 +161,7 @@ export default function AssetsPage() {
             color="primary" 
             onClick={() => router.push(`/assets/${row.id}`)}
             sx={{ minWidth: 'auto' }}
+            title="ดูรายละเอียด"
           >
             <VisibilityIcon fontSize="small" />
           </IconButton>
@@ -169,9 +170,10 @@ export default function AssetsPage() {
             color="primary" 
             onClick={() => {
               sessionStorage.setItem('editAssetData', JSON.stringify(row));
-              router.push(`/assets/${row.id}/edit`);
+              router.push(`/assets/${row.id}`);
             }}
             sx={{ minWidth: 'auto' }}
+            title="แก้ไข"
           >
             <EditIcon fontSize="small" />
           </IconButton>

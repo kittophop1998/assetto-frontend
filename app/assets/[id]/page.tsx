@@ -31,36 +31,29 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon
 } from '@mui/icons-material';
-import { AssetFormData, assetService } from '@/src/services/assetService';
+import { AssetFormData, assetService, AssetItem, assetItemService, CreateAssetItemDTO } from '@/src/services/assetService';
 import { masterService, Department, Category } from '@/src/services/masterService';
 import MainLayout from '@/src/components/layout/MainLayout';
-
-interface Equipment {
-  id: number;
-  serialNumber: string;
-  assetId: number;
-  status: string;
-  purchaseDate: string;
-  warrantyEnd: string;
-  createdAt?: string;
-}
 
 export default function AssetFormPage() {
   const router = useRouter();
   const params = useParams();
+  const [isMounted, setIsMounted] = useState(false);
   const isEdit = params?.id && params.id !== 'new';
 
   const [loading, setLoading] = useState(false);
   const [loadingAsset, setLoadingAsset] = useState(false);
+  const [loadingItems, setLoadingItems] = useState(false);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [equipments, setEquipments] = useState<Equipment[]>([]);
+  const [equipments, setEquipments] = useState<AssetItem[]>([]);
   const [openModal, setOpenModal] = useState(false);
-  const [editingEquipment, setEditingEquipment] = useState<Equipment | null>(null);
+  const [editingEquipment, setEditingEquipment] = useState<AssetItem | null>(null);
   const [equipmentForm, setEquipmentForm] = useState({
     serialNumber: '',
     purchaseDate: '',
     warrantyEnd: '',
+    remark: '',
   });
 
   const [formData, setFormData] = useState<AssetFormData>({
@@ -82,13 +75,22 @@ export default function AssetFormPage() {
   });
 
   useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isMounted) return;
+    
     loadMasterData();
     if (isEdit) {
       loadAsset();
+    }
+    // โหลด equipments เมื่อไม่ใช่หน้า new
+    if (params.id && params.id !== 'new') {
       loadEquipments();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [isMounted]);
 
   const loadMasterData = async () => {
     try {
@@ -101,32 +103,17 @@ export default function AssetFormPage() {
   };
 
   const loadEquipments = async () => {
+    if (!params.id || params.id === 'new') return;
+    
+    setLoadingItems(true);
     try {
-      // TODO: Replace with actual API call when backend is ready
-      // const data = await assetService.getEquipmentsByAssetId(params.id as string);
-      // setEquipments(data);
-
-      // Mock data - ข้อมูลจำลองสำหรับทดสอบ
-      setEquipments([
-        {
-          id: 1,
-          serialNumber: 'SN001',
-          assetId: Number(params.id),
-          status: 'Active',
-          purchaseDate: '2024-01-15',
-          warrantyEnd: '2027-01-15'
-        },
-        {
-          id: 2,
-          serialNumber: 'SN002',
-          assetId: Number(params.id),
-          status: 'Active',
-          purchaseDate: '2024-02-20',
-          warrantyEnd: '2027-02-20'
-        },
-      ]);
+      const data = await assetItemService.getAssetItems(Number(params.id));
+      setEquipments(data);
     } catch (error) {
-      console.error('Failed to load equipments:', error);
+      console.error('Failed to load asset items:', error);
+      alert('ไม่สามารถโหลดข้อมูลอุปกรณ์ได้');
+    } finally {
+      setLoadingItems(false);
     }
   };
 
@@ -197,6 +184,7 @@ export default function AssetFormPage() {
       serialNumber: '',
       purchaseDate: '',
       warrantyEnd: '',
+      remark: '',
     });
     setOpenModal(true);
   };
@@ -208,6 +196,7 @@ export default function AssetFormPage() {
       serialNumber: '',
       purchaseDate: '',
       warrantyEnd: '',
+      remark: '',
     });
   };
 
@@ -229,32 +218,29 @@ export default function AssetFormPage() {
 
     try {
       if (editingEquipment) {
-        // TODO: Update equipment API call when backend is ready
-        // await assetService.updateEquipment(editingEquipment.id, equipmentForm);
-        
-        // Mock: อัปเดตข้อมูลในระบบ local
-        setEquipments(prev => prev.map(eq =>
-          eq.id === editingEquipment.id ? {
-            ...eq,
-            serialNumber: equipmentForm.serialNumber,
-            purchaseDate: equipmentForm.purchaseDate,
-            warrantyEnd: equipmentForm.warrantyEnd
-          } : eq
-        ));
-      } else {
-        // TODO: Create equipment API call when backend is ready
-        // await assetService.createEquipment({ ...equipmentForm, assetId: params.id });
-        
-        // Mock: เพิ่มข้อมูลใหม่ในระบบ local
-        const newEquipment: Equipment = {
-          id: Date.now(),
+        // Update existing item
+        const updated = await assetItemService.updateAssetItem(editingEquipment.id, {
           serialNumber: equipmentForm.serialNumber,
-          assetId: Number(params.id),
-          status: 'Active',
           purchaseDate: equipmentForm.purchaseDate,
           warrantyEnd: equipmentForm.warrantyEnd,
+          remark: equipmentForm.remark,
+        });
+        
+        setEquipments(prev => prev.map(eq =>
+          eq.id === editingEquipment.id ? updated : eq
+        ));
+      } else {
+        // Create new item
+        const createData: CreateAssetItemDTO = {
+          assetModelId: Number(params.id),
+          serialNumber: equipmentForm.serialNumber,
+          purchaseDate: equipmentForm.purchaseDate,
+          warrantyEnd: equipmentForm.warrantyEnd,
+          remark: equipmentForm.remark,
         };
-        setEquipments(prev => [...prev, newEquipment]);
+        
+        const newItem = await assetItemService.createAssetItem(createData);
+        setEquipments(prev => [...prev, newItem]);
       }
       handleCloseModal();
     } catch (error) {
@@ -263,12 +249,13 @@ export default function AssetFormPage() {
     }
   };
 
-  const handleEditEquipment = (equipment: Equipment) => {
+  const handleEditEquipment = (equipment: AssetItem) => {
     setEditingEquipment(equipment);
     setEquipmentForm({
       serialNumber: equipment.serialNumber,
       purchaseDate: equipment.purchaseDate,
       warrantyEnd: equipment.warrantyEnd,
+      remark: equipment.remark || '',
     });
     setOpenModal(true);
   };
@@ -277,10 +264,7 @@ export default function AssetFormPage() {
     if (!confirm('ต้องการลบอุปกรณ์นี้หรือไม่?')) return;
 
     try {
-      // TODO: Delete equipment API call when backend is ready
-      // await assetService.deleteEquipment(id);
-      
-      // Mock: ลบข้อมูลในระบบ local
+      await assetItemService.deleteAssetItem(id);
       setEquipments(prev => prev.filter(eq => eq.id !== id));
     } catch (error) {
       console.error('Failed to delete equipment:', error);
@@ -290,14 +274,20 @@ export default function AssetFormPage() {
 
   return (
     <MainLayout title={isEdit ? 'แก้ไขสินทรัพย์' : 'เพิ่มสินทรัพย์'}>
-      <Box sx={{ mb: 3 }}>
-        <Button startIcon={<ArrowBackIcon />} onClick={() => router.back()} sx={{ mb: 2 }}>
-          ย้อนกลับ
-        </Button>
-        <Typography variant="h5" fontWeight={700}>
-          {isEdit ? 'แก้ไขสินทรัพย์' : 'เพิ่มสินทรัพย์'}
-        </Typography>
-      </Box>
+      {!isMounted ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
+          <Typography color="text.secondary">กำลังโหลด...</Typography>
+        </Box>
+      ) : (
+        <>
+          <Box sx={{ mb: 3 }}>
+            <Button startIcon={<ArrowBackIcon />} onClick={() => router.back()} sx={{ mb: 2 }}>
+              ย้อนกลับ
+            </Button>
+            <Typography variant="h5" fontWeight={700}>
+              {isEdit ? 'แก้ไขสินทรัพย์' : 'เพิ่มสินทรัพย์'}
+            </Typography>
+          </Box>
 
       <Card>
         <CardContent>
@@ -512,8 +502,8 @@ export default function AssetFormPage() {
         </CardContent>
       </Card>
 
-      {/* Equipment List Section - Only show in edit mode */}
-      {isEdit && (
+      {/* Equipment List Section - Show when viewing/editing existing asset */}
+      {params.id !== 'new' && (
         <Card sx={{ mt: 3 }}>
           <CardContent>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
@@ -531,56 +521,67 @@ export default function AssetFormPage() {
 
             <Divider sx={{ mb: 2 }} />
 
-            <TableContainer component={Paper} variant="outlined">
-              <Table>
-                <TableHead>
-                  <TableRow sx={{ bgcolor: 'grey.50' }}>
-                    <TableCell sx={{ fontWeight: 600 }}>ลำดับ</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>เลข SN</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>วันที่จัดซื้อ</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>วันที่หมดประกัน</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>สถานะ</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }} align="center">จัดการ</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {equipments.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={6} align="center" sx={{ py: 4, color: 'text.secondary' }}>
-                        ไม่มีข้อมูลอุปกรณ์
-                      </TableCell>
+            {loadingItems ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 200 }}>
+                <Typography color="text.secondary">กำลังโหลดข้อมูล...</Typography>
+              </Box>
+            ) : (
+              <TableContainer component={Paper} variant="outlined">
+                <Table>
+                  <TableHead>
+                    <TableRow sx={{ bgcolor: 'grey.50' }}>
+                      <TableCell sx={{ fontWeight: 600 }}>ลำดับ</TableCell>
+                      <TableCell sx={{ fontWeight: 600 }}>เลข SN</TableCell>
+                      <TableCell sx={{ fontWeight: 600 }}>วันที่จัดซื้อ</TableCell>
+                      <TableCell sx={{ fontWeight: 600 }}>วันที่หมดประกัน</TableCell>
+                      <TableCell sx={{ fontWeight: 600 }}>สถานะ</TableCell>
+                      <TableCell sx={{ fontWeight: 600 }} align="center">จัดการ</TableCell>
                     </TableRow>
-                  ) : (
-                    equipments.map((equipment, index) => (
-                      <TableRow key={equipment.id} hover>
-                        <TableCell>{index + 1}</TableCell>
-                        <TableCell>{equipment.serialNumber}</TableCell>
-                        <TableCell>{equipment.purchaseDate}</TableCell>
-                        <TableCell>{equipment.warrantyEnd}</TableCell>
-                        <TableCell>{equipment.status}</TableCell>
-                        <TableCell align="center">
-                          <IconButton
-                            size="small"
-                            color="primary"
-                            onClick={() => handleEditEquipment(equipment)}
-                            sx={{ mr: 1 }}
-                          >
-                            <EditIcon fontSize="small" />
-                          </IconButton>
-                          <IconButton
-                            size="small"
-                            color="error"
-                            onClick={() => handleDeleteEquipment(equipment.id)}
-                          >
-                            <DeleteIcon fontSize="small" />
-                          </IconButton>
+                  </TableHead>
+                  <TableBody>
+                    {equipments.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={6} align="center" sx={{ py: 4, color: 'text.secondary' }}>
+                          ไม่มีข้อมูลอุปกรณ์
                         </TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
+                    ) : (
+                      equipments.map((equipment, index) => (
+                        <TableRow key={equipment.id} hover>
+                          <TableCell>{index + 1}</TableCell>
+                          <TableCell>{equipment.serialNumber}</TableCell>
+                          <TableCell>{equipment.purchaseDate}</TableCell>
+                          <TableCell>{equipment.warrantyEnd}</TableCell>
+                          <TableCell>
+                            {equipment.status === 'AVAILABLE' && 'พร้อมใช้งาน'}
+                            {equipment.status === 'IN_USE' && 'กำลังใช้งาน'}
+                            {equipment.status === 'MAINTENANCE' && 'ซ่อมบำรุง'}
+                            {equipment.status === 'DISPOSED' && 'จำหน่ายแล้ว'}
+                          </TableCell>
+                          <TableCell align="center">
+                            <IconButton
+                              size="small"
+                              color="primary"
+                              onClick={() => handleEditEquipment(equipment)}
+                              sx={{ mr: 1 }}
+                            >
+                              <EditIcon fontSize="small" />
+                            </IconButton>
+                            <IconButton
+                              size="small"
+                              color="error"
+                              onClick={() => handleDeleteEquipment(equipment.id)}
+                            >
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            )}
           </CardContent>
         </Card>
       )}
@@ -621,6 +622,16 @@ export default function AssetFormPage() {
               onChange={(e) => setEquipmentForm(prev => ({ ...prev, warrantyEnd: e.target.value }))}
               InputLabelProps={{ shrink: true }}
             />
+
+            <TextField
+              fullWidth
+              multiline
+              rows={2}
+              label="หมายเหตุ"
+              value={equipmentForm.remark}
+              onChange={(e) => setEquipmentForm(prev => ({ ...prev, remark: e.target.value }))}
+              placeholder="กรอกหมายเหตุ (ถ้ามี)"
+            />
           </Box>
         </DialogContent>
         <DialogActions>
@@ -632,6 +643,8 @@ export default function AssetFormPage() {
           </Button>
         </DialogActions>
       </Dialog>
+        </>
+      )}
     </MainLayout>
   );
 }

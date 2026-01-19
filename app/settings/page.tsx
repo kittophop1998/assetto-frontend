@@ -1,7 +1,7 @@
 'use client';
 
 import MainLayout from '@/src/components/layout/MainLayout';
-import { Box, Typography } from '@mui/material';
+import UnderDevelopment from '@/src/components/common/UnderDevelopment';
 import { useTranslation } from 'react-i18next';
 
 export default function SettingsPage() {
@@ -9,11 +9,7 @@ export default function SettingsPage() {
 
   return (
     <MainLayout title={t('menu.settings')}>
-      <Box sx={{ textAlign: 'center', py: 8 }}>
-        <Typography variant="h5" color="text.secondary">
-          หน้า {t('menu.settings')} กำลังอยู่ในการพัฒนา
-        </Typography>
-      </Box>
+      <UnderDevelopment pageName={t('menu.settings')} />
     </MainLayout>
   );
 }

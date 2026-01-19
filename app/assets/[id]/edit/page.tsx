@@ -10,40 +10,14 @@ import {
   Button,
   MenuItem,
   Typography,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  IconButton,
-  Divider
 } from '@mui/material';
 import {
   Save as SaveIcon,
   ArrowBack as ArrowBackIcon,
-  Add as AddIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon
 } from '@mui/icons-material';
 import { AssetFormData, assetService } from '@/src/services/assetService';
 import { masterService, Department, Category } from '@/src/services/masterService';
 import MainLayout from '@/src/components/layout/MainLayout';
-
-interface Equipment {
-  id: number;
-  serialNumber: string;
-  assetId: number;
-  status: string;
-  purchaseDate: string;
-  warrantyEnd: string;
-  createdAt?: string;
-}
 
 export default function AssetEditPage() {
   const router = useRouter();
@@ -52,14 +26,6 @@ export default function AssetEditPage() {
   const [loading, setLoading] = useState(false);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [equipments, setEquipments] = useState<Equipment[]>([]);
-  const [openModal, setOpenModal] = useState(false);
-  const [editingEquipment, setEditingEquipment] = useState<Equipment | null>(null);
-  const [equipmentForm, setEquipmentForm] = useState({
-    serialNumber: '',
-    purchaseDate: '',
-    warrantyEnd: '',
-  });
 
   const [formData, setFormData] = useState<AssetFormData>({
     code: '',
@@ -82,12 +48,10 @@ export default function AssetEditPage() {
   useEffect(() => {
     loadMasterData();
     
-    // Check if asset data is available in sessionStorage
     const storedAssetData = sessionStorage.getItem('editAssetData');
     if (storedAssetData) {
       try {
         const assetData = JSON.parse(storedAssetData);
-        // Populate form with stored data
         setFormData({
           code: assetData.code || '',
           name: assetData.name || '',
@@ -107,20 +71,14 @@ export default function AssetEditPage() {
           supplier: assetData.supplier || '',
           remark: assetData.remark || '',
         });
-        // Clear the stored data after use
         sessionStorage.removeItem('editAssetData');
       } catch (error) {
         console.error('Failed to parse stored asset data:', error);
-        // If parsing fails, fetch from API
         loadAsset();
       }
     } else {
-      // If no stored data, fetch from API
       loadAsset();
     }
-    
-    // Always fetch equipments from API
-    loadEquipments();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -131,36 +89,6 @@ export default function AssetEditPage() {
       setCategories(masterData.categories);
     } catch (error) {
       console.error('Failed to load master data:', error);
-    }
-  };
-
-  const loadEquipments = async () => {
-    try {
-      // TODO: Replace with actual API call
-      // const data = await assetService.getEquipmentsByAssetId(params.id as string);
-      // setEquipments(data);
-
-      // Mock data for now
-      setEquipments([
-        {
-          id: 1,
-          serialNumber: 'SN001',
-          assetId: Number(params.id),
-          status: 'Active',
-          purchaseDate: '2024-01-15',
-          warrantyEnd: '2027-01-15'
-        },
-        {
-          id: 2,
-          serialNumber: 'SN002',
-          assetId: Number(params.id),
-          status: 'Active',
-          purchaseDate: '2024-02-20',
-          warrantyEnd: '2027-02-20'
-        },
-      ]);
-    } catch (error) {
-      console.error('Failed to load equipments:', error);
     }
   };
 
@@ -214,97 +142,6 @@ export default function AssetEditPage() {
     }
   };
 
-  const handleOpenModal = () => {
-    setEditingEquipment(null);
-    setEquipmentForm({
-      serialNumber: '',
-      purchaseDate: '',
-      warrantyEnd: '',
-    });
-    setOpenModal(true);
-  };
-
-  const handleCloseModal = () => {
-    setOpenModal(false);
-    setEditingEquipment(null);
-    setEquipmentForm({
-      serialNumber: '',
-      purchaseDate: '',
-      warrantyEnd: '',
-    });
-  };
-
-  const handleSaveEquipment = async () => {
-    if (!equipmentForm.serialNumber.trim()) {
-      alert('กรุณากรอกเลข SN');
-      return;
-    }
-
-    if (!equipmentForm.purchaseDate) {
-      alert('กรุณาเลือกวันที่จัดซื้อ');
-      return;
-    }
-
-    if (!equipmentForm.warrantyEnd) {
-      alert('กรุณาเลือกวันที่หมดประกัน');
-      return;
-    }
-
-    try {
-      if (editingEquipment) {
-        // TODO: Update equipment API call
-        // await assetService.updateEquipment(editingEquipment.id, equipmentForm);
-        setEquipments(prev => prev.map(eq =>
-          eq.id === editingEquipment.id ? {
-            ...eq,
-            serialNumber: equipmentForm.serialNumber,
-            purchaseDate: equipmentForm.purchaseDate,
-            warrantyEnd: equipmentForm.warrantyEnd
-          } : eq
-        ));
-      } else {
-        // TODO: Create equipment API call
-        // await assetService.createEquipment({ ...equipmentForm, assetId: params.id });
-        const newEquipment: Equipment = {
-          id: Date.now(),
-          serialNumber: equipmentForm.serialNumber,
-          assetId: Number(params.id),
-          status: 'Active',
-          purchaseDate: equipmentForm.purchaseDate,
-          warrantyEnd: equipmentForm.warrantyEnd,
-        };
-        setEquipments(prev => [...prev, newEquipment]);
-      }
-      handleCloseModal();
-    } catch (error) {
-      console.error('Failed to save equipment:', error);
-      alert('Failed to save equipment');
-    }
-  };
-
-  const handleEditEquipment = (equipment: Equipment) => {
-    setEditingEquipment(equipment);
-    setEquipmentForm({
-      serialNumber: equipment.serialNumber,
-      purchaseDate: equipment.purchaseDate,
-      warrantyEnd: equipment.warrantyEnd,
-    });
-    setOpenModal(true);
-  };
-
-  const handleDeleteEquipment = async (id: number) => {
-    if (!confirm('ต้องการลบอุปกรณ์นี้หรือไม่?')) return;
-
-    try {
-      // TODO: Delete equipment API call
-      // await assetService.deleteEquipment(id);
-      setEquipments(prev => prev.filter(eq => eq.id !== id));
-    } catch (error) {
-      console.error('Failed to delete equipment:', error);
-      alert('Failed to delete equipment');
-    }
-  };
-
   return (
     <MainLayout title="แก้ไขสินทรัพย์">
       <Box sx={{ mb: 3 }}>
@@ -319,7 +156,6 @@ export default function AssetEditPage() {
       <Card>
         <CardContent>
           <form onSubmit={handleSubmit}>
-            {/* Using CSS Grid instead of MUI Grid */}
             <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 3 }}>
               <TextField
                 fullWidth
@@ -527,125 +363,6 @@ export default function AssetEditPage() {
           </form>
         </CardContent>
       </Card>
-
-      {/* Equipment List Section */}
-      <Card sx={{ mt: 3 }}>
-        <CardContent>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-            <Typography variant="h6" fontWeight={600}>
-              รายการอุปกรณ์
-            </Typography>
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={handleOpenModal}
-            >
-              เพิ่มอุปกรณ์
-            </Button>
-          </Box>
-
-          <Divider sx={{ mb: 2 }} />
-
-          <TableContainer component={Paper} variant="outlined">
-            <Table>
-              <TableHead>
-                <TableRow sx={{ bgcolor: 'grey.50' }}>
-                  <TableCell sx={{ fontWeight: 600 }}>ลำดับ</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>เลข SN</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>วันที่จัดซื้อ</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>วันที่หมดประกัน</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>สถานะ</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }} align="center">จัดการ</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {equipments.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} align="center" sx={{ py: 4, color: 'text.secondary' }}>
-                      ไม่มีข้อมูลอุปกรณ์
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  equipments.map((equipment, index) => (
-                    <TableRow key={equipment.id} hover>
-                      <TableCell>{index + 1}</TableCell>
-                      <TableCell>{equipment.serialNumber}</TableCell>
-                      <TableCell>{equipment.purchaseDate}</TableCell>
-                      <TableCell>{equipment.warrantyEnd}</TableCell>
-                      <TableCell>{equipment.status}</TableCell>
-                      <TableCell align="center">
-                        <IconButton
-                          size="small"
-                          color="primary"
-                          onClick={() => handleEditEquipment(equipment)}
-                          sx={{ mr: 1 }}
-                        >
-                          <EditIcon fontSize="small" />
-                        </IconButton>
-                        <IconButton
-                          size="small"
-                          color="error"
-                          onClick={() => handleDeleteEquipment(equipment.id)}
-                        >
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </CardContent>
-      </Card>
-
-      {/* Add/Edit Equipment Modal */}
-      <Dialog open={openModal} onClose={handleCloseModal} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          {editingEquipment ? 'แก้ไขอุปกรณ์' : 'เพิ่มอุปกรณ์'}
-        </DialogTitle>
-        <DialogContent>
-          <Box sx={{ pt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <TextField
-              fullWidth
-              required
-              label="เลข SN"
-              value={equipmentForm.serialNumber}
-              onChange={(e) => setEquipmentForm(prev => ({ ...prev, serialNumber: e.target.value }))}
-              placeholder="กรอกเลข Serial Number"
-              autoFocus
-            />
-
-            <TextField
-              fullWidth
-              required
-              type="date"
-              label="วันที่จัดซื้อ"
-              value={equipmentForm.purchaseDate}
-              onChange={(e) => setEquipmentForm(prev => ({ ...prev, purchaseDate: e.target.value }))}
-              InputLabelProps={{ shrink: true }}
-            />
-
-            <TextField
-              fullWidth
-              required
-              type="date"
-              label="วันที่หมดประกัน"
-              value={equipmentForm.warrantyEnd}
-              onChange={(e) => setEquipmentForm(prev => ({ ...prev, warrantyEnd: e.target.value }))}
-              InputLabelProps={{ shrink: true }}
-            />
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseModal} variant="outlined">
-            ยกเลิก
-          </Button>
-          <Button onClick={handleSaveEquipment} variant="contained">
-            บันทึก
-          </Button>
-        </DialogActions>
-      </Dialog>
     </MainLayout>
   );
 }

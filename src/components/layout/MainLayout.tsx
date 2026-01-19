@@ -39,7 +39,7 @@ export default function MainLayout({ children, title }: MainLayoutProps) {
           flex: 1,
           display: 'flex',
           flexDirection: 'column',
-          minWidth: 0, // สำคัญมาก
+          minWidth: 0,
         }}
       >
         <Header

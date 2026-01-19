@@ -1,3 +1,4 @@
+import { imageConfigDefault } from "next/dist/shared/lib/image-config";
 import axiosInstance from "../utils/axios";
 
 export interface Asset {
@@ -121,5 +122,73 @@ export const assetService = {
       responseType: 'blob',
     });
     return response.data;
+  },
+};
+
+// Asset Item interfaces
+export interface AssetItem {
+  id: number;
+  assetModelId: number;
+  serialNumber: string;
+  status: 'AVAILABLE' | 'IN_USE' | 'MAINTENANCE' | 'DISPOSED';
+  purchaseDate: string;
+  warrantyEnd: string;
+  remark?: string;
+  createdAt: string;
+  updatedAt: string;
+  assetModel?: {
+    id: number;
+    modelCode: string;
+    name: string;
+    category: string;
+    department: string;
+  };
+}
+
+export interface CreateAssetItemDTO {
+  assetModelId: number;
+  serialNumber: string;
+  purchaseDate?: string;
+  warrantyEnd?: string;
+  remark?: string;
+}
+
+export interface UpdateAssetItemDTO {
+  serialNumber?: string;
+  status?: 'AVAILABLE' | 'IN_USE' | 'MAINTENANCE' | 'DISPOSED';
+  purchaseDate?: string;
+  warrantyEnd?: string;
+  remark?: string;
+}
+
+export const assetItemService = {
+  getAssetItems: async (assetModelId?: number): Promise<AssetItem[]> => {
+    const params = assetModelId ? { assetModelId } : {};
+    const response = await axiosInstance.get('/asset-items', { params });
+    
+    return response.data.data;
+  },
+
+  // Get asset item by ID
+  getAssetItemById: async (id: number): Promise<AssetItem> => {
+    const response = await axiosInstance.get(`/asset-items/${id}`);
+    return response.data.data;
+  },
+
+  // Create new asset item
+  createAssetItem: async (data: CreateAssetItemDTO): Promise<AssetItem> => {
+    const response = await axiosInstance.post('/asset-items', data);
+    return response.data.data;
+  },
+
+  // Update asset item
+  updateAssetItem: async (id: number, data: UpdateAssetItemDTO): Promise<AssetItem> => {
+    const response = await axiosInstance.put(`/asset-items/${id}`, data);
+    return response.data.data;
+  },
+
+  // Delete asset item
+  deleteAssetItem: async (id: number): Promise<void> => {
+    await axiosInstance.delete(`/asset-items/${id}`);
   },
 };
