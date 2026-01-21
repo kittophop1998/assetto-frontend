@@ -1,5 +1,6 @@
-import { imageConfigDefault } from "next/dist/shared/lib/image-config";
 import axiosInstance from "../utils/axios";
+
+export type AssetStatusType = 'ACTIVE' | 'IN_USE' | 'LOW_STOCK';
 
 export interface Asset {
   id: string;
@@ -7,19 +8,14 @@ export interface Asset {
   name: string;
   category: string;
   categoryId: number;
-  description?: string;
+  description: string;
   unit: string;
   totalQuantity: number;
   availableQuantity: number;
-  inUseQuantity: number;
-  costPerUnit?: number;
-  supplier?: string;
-  purchaseDate?: string;
   departmentId: string | number;
   departmentName?: string;
-  minimumStock: number;
-  remark?: string;
-  status: 'Active' | 'In Use' | 'Low Stock' | 'Disposed';
+  minimumQty: number;
+  status: AssetStatusType;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -28,16 +24,13 @@ export interface AssetFormData {
   code: string;
   name: string;
   categoryId: number;
-  description?: string;
+  description: string;
   unit: string;
   totalQuantity: number;
-  availableQuantity?: number;
-  minimumStock: number;
-  status?: string;
+  availableQuantity: number;
+  minimumQty: number;
+  status: AssetStatusType;
   departmentId: number;
-  purchaseDate?: string;
-  costPerUnit?: number;
-  supplier?: string;
 }
 
 export interface AssetListParams {

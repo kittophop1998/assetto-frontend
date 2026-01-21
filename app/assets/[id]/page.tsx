@@ -64,12 +64,9 @@ export default function AssetFormPage() {
     unit: 'unit',
     totalQuantity: 0,
     availableQuantity: 0,
-    minimumStock: 0,
-    status: 'Active',
+    minimumQty: 0,
+    status: 'ACTIVE',
     departmentId: 0,
-    purchaseDate: '',
-    costPerUnit: 0,
-    supplier: '',
   });
 
   useEffect(() => {
@@ -78,12 +75,12 @@ export default function AssetFormPage() {
 
   useEffect(() => {
     if (!isMounted) return;
-    
+
     loadMasterData();
     if (isEdit) {
       loadAsset();
     }
-    // โหลด equipments เมื่อไม่ใช่หน้า new
+
     if (params.id && params.id !== 'new') {
       loadEquipments();
     }
@@ -102,7 +99,7 @@ export default function AssetFormPage() {
 
   const loadEquipments = async () => {
     if (!params.id || params.id === 'new') return;
-    
+
     setLoadingItems(true);
     try {
       const data = await assetItemService.getAssetItems(Number(params.id));
@@ -127,12 +124,9 @@ export default function AssetFormPage() {
         unit: asset.unit,
         totalQuantity: asset.totalQuantity,
         availableQuantity: asset.availableQuantity,
-        minimumStock: asset.minimumStock,
+        minimumQty: asset.minimumQty,
         status: asset.status,
         departmentId: typeof asset.departmentId === 'string' ? parseInt(asset.departmentId) : asset.departmentId,
-        purchaseDate: asset.purchaseDate || '',
-        costPerUnit: asset.costPerUnit || 0,
-        supplier: asset.supplier || '',
       });
     } catch (error) {
       console.error('Failed to load asset:', error);
@@ -146,7 +140,7 @@ export default function AssetFormPage() {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: ['totalQuantity', 'availableQuantity', 'inUseQuantity', 'costPerUnit', 'minimumStock', 'categoryId', 'departmentId'].includes(name)
+      [name]: ['totalQuantity', 'availableQuantity', 'minimumQty', 'categoryId', 'departmentId'].includes(name)
         ? Number(value)
         : value,
     }));
@@ -165,12 +159,9 @@ export default function AssetFormPage() {
         description: formData.description,
         totalQuantity: formData.totalQuantity,
         availableQuantity: formData.availableQuantity,
-        minimumStock: formData.minimumStock,
+        minimumQty: formData.minimumQty,
         status: formData.status,
         departmentId: formData.departmentId,
-        purchaseDate: formData.purchaseDate,
-        costPerUnit: formData.costPerUnit,
-        supplier: formData.supplier,
       };
 
       if (isEdit) {
@@ -237,7 +228,7 @@ export default function AssetFormPage() {
           warrantyEnd: equipmentForm.warrantyEnd,
           remark: equipmentForm.remark,
         });
-        
+
         setEquipments(prev => prev.map(eq =>
           eq.id === editingEquipment.id ? updated : eq
         ));
@@ -250,7 +241,7 @@ export default function AssetFormPage() {
           warrantyEnd: equipmentForm.warrantyEnd,
           remark: equipmentForm.remark,
         };
-        
+
         const newItem = await assetItemService.createAssetItem(createData);
         setEquipments(prev => [...prev, newItem]);
       }
@@ -301,336 +292,306 @@ export default function AssetFormPage() {
             </Typography>
           </Box>
 
-      <Card>
-        <CardContent>
-          {loadingAsset ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
-              <Typography color="text.secondary">กำลังโหลดข้อมูล...</Typography>
-            </Box>
-          ) : (
-            <form onSubmit={handleSubmit}>
-              {/* Using MUI responsive Box with CSS Grid */}
-              <Box sx={{ 
-                display: 'grid', 
-                gridTemplateColumns: {
-                  xs: '1fr',           // Mobile: 1 column
-                  sm: 'repeat(2, 1fr)', // Tablet: 2 columns
-                  md: 'repeat(3, 1fr)'  // Desktop: 3 columns
-                },
-                gap: 3 
-              }}>
-                <TextField
-                  fullWidth
-                  required
-                  label="รหัสทรัพย์สิน"
-                  name="code"
-                  value={formData.code}
-                  onChange={handleChange}
-                  placeholder="AST-001"
-                  disabled={loadingAsset}
-                />
+          <Card>
+            <CardContent>
+              {loadingAsset ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
+                  <Typography color="text.secondary">กำลังโหลดข้อมูล...</Typography>
+                </Box>
+              ) : (
+                <form onSubmit={handleSubmit}>
+                  {/* Using MUI responsive Box with CSS Grid */}
+                  <Box sx={{
+                    display: 'grid',
+                    gridTemplateColumns: {
+                      xs: '1fr',           // Mobile: 1 column
+                      sm: 'repeat(2, 1fr)', // Tablet: 2 columns
+                      md: 'repeat(3, 1fr)'  // Desktop: 3 columns
+                    },
+                    gap: 3
+                  }}>
+                    <TextField
+                      fullWidth
+                      required
+                      label="รหัสทรัพย์สิน"
+                      name="code"
+                      value={formData.code}
+                      onChange={handleChange}
+                      placeholder="AST-001"
+                      disabled={loadingAsset}
+                    />
 
-                <TextField
-                  fullWidth
-                  required
-                  label="ชื่อสินทรัพย์"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                />
+                    <TextField
+                      fullWidth
+                      required
+                      label="ชื่อสินทรัพย์"
+                      name="name"
+                      value={formData.name}
+                      onChange={handleChange}
+                    />
 
-                <TextField
-                  fullWidth
-                  required
-                  select
-                  label="หมวดหมู่"
-                  name="categoryId"
-                  value={formData.categoryId}
-                  onChange={handleChange}
-                >
-                  <MenuItem value={0}>เลือกหมวดหมู่</MenuItem>
-                  {categories.map((category) => (
-                    <MenuItem key={category.id} value={category.id}>
-                      {category.name}
-                    </MenuItem>
-                  ))}
-                </TextField>
+                    <TextField
+                      fullWidth
+                      required
+                      select
+                      label="หมวดหมู่"
+                      name="categoryId"
+                      value={formData.categoryId}
+                      onChange={handleChange}
+                    >
+                      <MenuItem value={0}>เลือกหมวดหมู่</MenuItem>
+                      {categories.map((category) => (
+                        <MenuItem key={category.id} value={category.id}>
+                          {category.name}
+                        </MenuItem>
+                      ))}
+                    </TextField>
 
-                <TextField
-                  fullWidth
-                  required
-                  select
-                  label="หน่วย"
-                  name="unit"
-                  value={formData.unit}
-                  onChange={handleChange}
-                >
-                  <MenuItem value="unit">ชิ้น (unit)</MenuItem>
-                  <MenuItem value="box">กล่อง (box)</MenuItem>
-                  <MenuItem value="set">ชุด (set)</MenuItem>
-                </TextField>
+                    <TextField
+                      fullWidth
+                      required
+                      select
+                      label="หน่วย"
+                      name="unit"
+                      value={formData.unit}
+                      onChange={handleChange}
+                    >
+                      <MenuItem value="unit">ชิ้น (unit)</MenuItem>
+                      <MenuItem value="box">กล่อง (box)</MenuItem>
+                      <MenuItem value="set">ชุด (set)</MenuItem>
+                    </TextField>
 
-                <Box sx={{ gridColumn: { xs: '1', sm: '1 / -1' } }}>
-                  <TextField
-                    fullWidth
-                    multiline
-                    rows={3}
-                    label="รายละเอียด"
-                    name="description"
-                    value={formData.description}
-                    onChange={handleChange}
-                  />
+                    <Box sx={{ gridColumn: { xs: '1', sm: '1 / -1' } }}>
+                      <TextField
+                        fullWidth
+                        multiline
+                        rows={3}
+                        label="รายละเอียด"
+                        name="description"
+                        value={formData.description}
+                        onChange={handleChange}
+                      />
+                    </Box>
+
+                    <TextField
+                      fullWidth
+                      required
+                      type="number"
+                      label="จำนวนทั้งหมด"
+                      name="totalQuantity"
+                      value={formData.totalQuantity}
+                      onChange={handleChange}
+                      inputProps={{ min: 0 }}
+                    />
+
+                    <TextField
+                      fullWidth
+                      required
+                      type="number"
+                      label="จำนวนคงเหลือ"
+                      name="availableQuantity"
+                      value={formData.availableQuantity}
+                      onChange={handleChange}
+                      inputProps={{ min: 0 }}
+                    />
+
+                    <TextField
+                      fullWidth
+                      required
+                      type="number"
+                      label="จำนวนขั้นต่ำ"
+                      name="minimumQty"
+                      value={formData.minimumQty}
+                      onChange={handleChange}
+                      inputProps={{ min: 0 }}
+                    />
+
+                    <TextField
+                      fullWidth
+                      required
+                      select
+                      label="สถานะ"
+                      name="status"
+                      value={formData.status}
+                      onChange={handleChange}
+                    >
+                      <MenuItem value="ACTIVE">Active</MenuItem>
+                      <MenuItem value="IN_USE">In Use</MenuItem>
+                      <MenuItem value="LOW_STOCK">Low Stock</MenuItem>
+                    </TextField>
+
+                    <TextField
+                      fullWidth
+                      required
+                      select
+                      label="แผนก"
+                      name="departmentId"
+                      value={formData.departmentId}
+                      onChange={handleChange}
+                    >
+                      <MenuItem value={0}>เลือกแผนก</MenuItem>
+                      {departments.map((department) => (
+                        <MenuItem key={department.id} value={department.id}>
+                          {department.name}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+
+                    <Box sx={{ gridColumn: { xs: '1', sm: '1 / -1' }, display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+                      <Button variant="outlined" onClick={() => router.back()} disabled={loading || loadingAsset}>
+                        ยกเลิก
+                      </Button>
+                      <Button type="submit" variant="contained" startIcon={<SaveIcon />} disabled={loading || loadingAsset}>
+                        {loading ? 'กำลังบันทึก...' : 'บันทึก'}
+                      </Button>
+                    </Box>
+                  </Box>
+                </form>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Equipment List Section - Show when viewing/editing existing asset */}
+          {params.id !== 'new' && (
+            <Card sx={{ mt: 3 }}>
+              <CardContent>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                  <Typography variant="h6" fontWeight={600}>
+                    รายการอุปกรณ์
+                  </Typography>
+                  <Button
+                    variant="contained"
+                    startIcon={<AddIcon />}
+                    onClick={handleOpenModal}
+                  >
+                    เพิ่มอุปกรณ์
+                  </Button>
                 </Box>
 
+                <Divider sx={{ mb: 2 }} />
+
+                {loadingItems ? (
+                  <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 200 }}>
+                    <Typography color="text.secondary">กำลังโหลดข้อมูล...</Typography>
+                  </Box>
+                ) : (
+                  <TableContainer component={Paper} variant="outlined">
+                    <Table>
+                      <TableHead>
+                        <TableRow sx={{ bgcolor: 'grey.50' }}>
+                          <TableCell sx={{ fontWeight: 600 }}>ลำดับ</TableCell>
+                          <TableCell sx={{ fontWeight: 600 }}>เลข SN</TableCell>
+                          <TableCell sx={{ fontWeight: 600 }}>วันที่จัดซื้อ</TableCell>
+                          <TableCell sx={{ fontWeight: 600 }}>วันที่หมดประกัน</TableCell>
+                          <TableCell sx={{ fontWeight: 600 }}>สถานะ</TableCell>
+                          <TableCell sx={{ fontWeight: 600 }} align="center">จัดการ</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {equipments.length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={6} align="center" sx={{ py: 4, color: 'text.secondary' }}>
+                              ไม่มีข้อมูลอุปกรณ์
+                            </TableCell>
+                          </TableRow>
+                        ) : (
+                          equipments.map((equipment, index) => (
+                            <TableRow key={equipment.id} hover>
+                              <TableCell>{index + 1}</TableCell>
+                              <TableCell>{equipment.serialNumber}</TableCell>
+                              <TableCell>{equipment.purchaseDate}</TableCell>
+                              <TableCell>{equipment.warrantyEnd}</TableCell>
+                              <TableCell>
+                                {equipment.status === 'AVAILABLE' && 'พร้อมใช้งาน'}
+                                {equipment.status === 'IN_USE' && 'กำลังใช้งาน'}
+                                {equipment.status === 'MAINTENANCE' && 'ซ่อมบำรุง'}
+                                {equipment.status === 'DISPOSED' && 'จำหน่ายแล้ว'}
+                              </TableCell>
+                              <TableCell align="center">
+                                <IconButton
+                                  size="small"
+                                  color="primary"
+                                  onClick={() => handleEditEquipment(equipment)}
+                                  sx={{ mr: 1 }}
+                                >
+                                  <EditIcon fontSize="small" />
+                                </IconButton>
+                                <IconButton
+                                  size="small"
+                                  color="error"
+                                  onClick={() => handleDeleteEquipment(equipment.id)}
+                                >
+                                  <DeleteIcon fontSize="small" />
+                                </IconButton>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        )}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Add/Edit Equipment Modal */}
+          <Dialog open={openModal} onClose={handleCloseModal} maxWidth="sm" fullWidth>
+            <DialogTitle>
+              {editingEquipment ? 'แก้ไขอุปกรณ์' : 'เพิ่มอุปกรณ์'}
+            </DialogTitle>
+            <DialogContent>
+              <Box sx={{ pt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
                 <TextField
                   fullWidth
                   required
-                  type="number"
-                  label="จำนวนทั้งหมด"
-                  name="totalQuantity"
-                  value={formData.totalQuantity}
-                  onChange={handleChange}
-                  inputProps={{ min: 0 }}
+                  label="เลข SN"
+                  value={equipmentForm.serialNumber}
+                  onChange={(e) => setEquipmentForm(prev => ({ ...prev, serialNumber: e.target.value }))}
+                  placeholder="กรอกเลข Serial Number"
+                  autoFocus
                 />
-
-                <TextField
-                  fullWidth
-                  required
-                  type="number"
-                  label="จำนวนคงเหลือ"
-                  name="availableQuantity"
-                  value={formData.availableQuantity}
-                  onChange={handleChange}
-                  inputProps={{ min: 0 }}
-                />
-
-                <TextField
-                  fullWidth
-                  required
-                  type="number"
-                  label="จำนวนขั้นต่ำ"
-                  name="minimumStock"
-                  value={formData.minimumStock}
-                  onChange={handleChange}
-                  inputProps={{ min: 0 }}
-                />
-
-                <TextField
-                  fullWidth
-                  required
-                  select
-                  label="สถานะ"
-                  name="status"
-                  value={formData.status}
-                  onChange={handleChange}
-                >
-                  <MenuItem value="Active">Active</MenuItem>
-                  <MenuItem value="In Use">In Use</MenuItem>
-                  <MenuItem value="Low Stock">Low Stock</MenuItem>
-                </TextField>
-
-                <TextField
-                  fullWidth
-                  required
-                  select
-                  label="แผนก"
-                  name="departmentId"
-                  value={formData.departmentId}
-                  onChange={handleChange}
-                >
-                  <MenuItem value={0}>เลือกแผนก</MenuItem>
-                  {departments.map((department) => (
-                    <MenuItem key={department.id} value={department.id}>
-                      {department.name}
-                    </MenuItem>
-                  ))}
-                </TextField>
 
                 <TextField
                   fullWidth
                   required
                   type="date"
                   label="วันที่จัดซื้อ"
-                  name="purchaseDate"
-                  value={formData.purchaseDate}
-                  onChange={handleChange}
+                  value={equipmentForm.purchaseDate}
+                  onChange={(e) => setEquipmentForm(prev => ({ ...prev, purchaseDate: e.target.value }))}
                   InputLabelProps={{ shrink: true }}
                 />
 
                 <TextField
                   fullWidth
                   required
-                  type="number"
-                  label="ราคาต่อหน่วย"
-                  name="costPerUnit"
-                  value={formData.costPerUnit}
-                  onChange={handleChange}
-                  inputProps={{ min: 0, step: 0.01 }}
+                  type="date"
+                  label="วันที่หมดประกัน"
+                  value={equipmentForm.warrantyEnd}
+                  onChange={(e) => setEquipmentForm(prev => ({ ...prev, warrantyEnd: e.target.value }))}
+                  InputLabelProps={{ shrink: true }}
                 />
 
                 <TextField
                   fullWidth
-                  label="ผู้จัดจำหน่าย"
-                  name="supplier"
-                  value={formData.supplier}
-                  onChange={handleChange}
+                  multiline
+                  rows={2}
+                  label="หมายเหตุ"
+                  value={equipmentForm.remark}
+                  onChange={(e) => setEquipmentForm(prev => ({ ...prev, remark: e.target.value }))}
+                  placeholder="กรอกหมายเหตุ (ถ้ามี)"
                 />
-
-                <Box sx={{ gridColumn: { xs: '1', sm: '1 / -1' }, display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
-                  <Button variant="outlined" onClick={() => router.back()} disabled={loading || loadingAsset}>
-                    ยกเลิก
-                  </Button>
-                  <Button type="submit" variant="contained" startIcon={<SaveIcon />} disabled={loading || loadingAsset}>
-                    {loading ? 'กำลังบันทึก...' : 'บันทึก'}
-                  </Button>
-                </Box>
               </Box>
-            </form>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Equipment List Section - Show when viewing/editing existing asset */}
-      {params.id !== 'new' && (
-        <Card sx={{ mt: 3 }}>
-          <CardContent>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-              <Typography variant="h6" fontWeight={600}>
-                รายการอุปกรณ์
-              </Typography>
-              <Button
-                variant="contained"
-                startIcon={<AddIcon />}
-                onClick={handleOpenModal}
-              >
-                เพิ่มอุปกรณ์
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={handleCloseModal} variant="outlined">
+                ยกเลิก
               </Button>
-            </Box>
-
-            <Divider sx={{ mb: 2 }} />
-
-            {loadingItems ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 200 }}>
-                <Typography color="text.secondary">กำลังโหลดข้อมูล...</Typography>
-              </Box>
-            ) : (
-              <TableContainer component={Paper} variant="outlined">
-                <Table>
-                  <TableHead>
-                    <TableRow sx={{ bgcolor: 'grey.50' }}>
-                      <TableCell sx={{ fontWeight: 600 }}>ลำดับ</TableCell>
-                      <TableCell sx={{ fontWeight: 600 }}>เลข SN</TableCell>
-                      <TableCell sx={{ fontWeight: 600 }}>วันที่จัดซื้อ</TableCell>
-                      <TableCell sx={{ fontWeight: 600 }}>วันที่หมดประกัน</TableCell>
-                      <TableCell sx={{ fontWeight: 600 }}>สถานะ</TableCell>
-                      <TableCell sx={{ fontWeight: 600 }} align="center">จัดการ</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {equipments.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={6} align="center" sx={{ py: 4, color: 'text.secondary' }}>
-                          ไม่มีข้อมูลอุปกรณ์
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      equipments.map((equipment, index) => (
-                        <TableRow key={equipment.id} hover>
-                          <TableCell>{index + 1}</TableCell>
-                          <TableCell>{equipment.serialNumber}</TableCell>
-                          <TableCell>{equipment.purchaseDate}</TableCell>
-                          <TableCell>{equipment.warrantyEnd}</TableCell>
-                          <TableCell>
-                            {equipment.status === 'AVAILABLE' && 'พร้อมใช้งาน'}
-                            {equipment.status === 'IN_USE' && 'กำลังใช้งาน'}
-                            {equipment.status === 'MAINTENANCE' && 'ซ่อมบำรุง'}
-                            {equipment.status === 'DISPOSED' && 'จำหน่ายแล้ว'}
-                          </TableCell>
-                          <TableCell align="center">
-                            <IconButton
-                              size="small"
-                              color="primary"
-                              onClick={() => handleEditEquipment(equipment)}
-                              sx={{ mr: 1 }}
-                            >
-                              <EditIcon fontSize="small" />
-                            </IconButton>
-                            <IconButton
-                              size="small"
-                              color="error"
-                              onClick={() => handleDeleteEquipment(equipment.id)}
-                            >
-                              <DeleteIcon fontSize="small" />
-                            </IconButton>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Add/Edit Equipment Modal */}
-      <Dialog open={openModal} onClose={handleCloseModal} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          {editingEquipment ? 'แก้ไขอุปกรณ์' : 'เพิ่มอุปกรณ์'}
-        </DialogTitle>
-        <DialogContent>
-          <Box sx={{ pt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <TextField
-              fullWidth
-              required
-              label="เลข SN"
-              value={equipmentForm.serialNumber}
-              onChange={(e) => setEquipmentForm(prev => ({ ...prev, serialNumber: e.target.value }))}
-              placeholder="กรอกเลข Serial Number"
-              autoFocus
-            />
-
-            <TextField
-              fullWidth
-              required
-              type="date"
-              label="วันที่จัดซื้อ"
-              value={equipmentForm.purchaseDate}
-              onChange={(e) => setEquipmentForm(prev => ({ ...prev, purchaseDate: e.target.value }))}
-              InputLabelProps={{ shrink: true }}
-            />
-
-            <TextField
-              fullWidth
-              required
-              type="date"
-              label="วันที่หมดประกัน"
-              value={equipmentForm.warrantyEnd}
-              onChange={(e) => setEquipmentForm(prev => ({ ...prev, warrantyEnd: e.target.value }))}
-              InputLabelProps={{ shrink: true }}
-            />
-
-            <TextField
-              fullWidth
-              multiline
-              rows={2}
-              label="หมายเหตุ"
-              value={equipmentForm.remark}
-              onChange={(e) => setEquipmentForm(prev => ({ ...prev, remark: e.target.value }))}
-              placeholder="กรอกหมายเหตุ (ถ้ามี)"
-            />
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseModal} variant="outlined">
-            ยกเลิก
-          </Button>
-          <Button onClick={handleSaveEquipment} variant="contained">
-            บันทึก
-          </Button>
-        </DialogActions>
-      </Dialog>
+              <Button onClick={handleSaveEquipment} variant="contained">
+                บันทึก
+              </Button>
+            </DialogActions>
+          </Dialog>
         </>
       )}
     </MainLayout>
