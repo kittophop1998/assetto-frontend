@@ -64,14 +64,12 @@ export default function AssetFormPage() {
     unit: 'unit',
     totalQuantity: 0,
     availableQuantity: 0,
-    inUseQuantity: 0,
     minimumStock: 0,
     status: 'Active',
     departmentId: 0,
     purchaseDate: '',
     costPerUnit: 0,
     supplier: '',
-    remark: '',
   });
 
   useEffect(() => {
@@ -129,14 +127,12 @@ export default function AssetFormPage() {
         unit: asset.unit,
         totalQuantity: asset.totalQuantity,
         availableQuantity: asset.availableQuantity,
-        inUseQuantity: asset.inUseQuantity,
         minimumStock: asset.minimumStock,
         status: asset.status,
         departmentId: typeof asset.departmentId === 'string' ? parseInt(asset.departmentId) : asset.departmentId,
         purchaseDate: asset.purchaseDate || '',
         costPerUnit: asset.costPerUnit || 0,
         supplier: asset.supplier || '',
-        remark: asset.remark || '',
       });
     } catch (error) {
       console.error('Failed to load asset:', error);
@@ -161,11 +157,27 @@ export default function AssetFormPage() {
     setLoading(true);
 
     try {
+      const requestBody = {
+        code: formData.code,
+        name: formData.name,
+        categoryId: formData.categoryId,
+        unit: formData.unit,
+        description: formData.description,
+        totalQuantity: formData.totalQuantity,
+        availableQuantity: formData.availableQuantity,
+        minimumStock: formData.minimumStock,
+        status: formData.status,
+        departmentId: formData.departmentId,
+        purchaseDate: formData.purchaseDate,
+        costPerUnit: formData.costPerUnit,
+        supplier: formData.supplier,
+      };
+
       if (isEdit) {
-        await assetService.updateAsset(params.id as string, formData);
+        await assetService.updateAsset(params.id as string, requestBody);
         alert('อัปเดตสินทรัพย์สำเร็จ');
       } else {
-        await assetService.createAsset(formData);
+        await assetService.createAsset(requestBody);
         alert('สร้างสินทรัพย์สำเร็จ');
       }
       router.push('/assets');
@@ -396,17 +408,6 @@ export default function AssetFormPage() {
                   fullWidth
                   required
                   type="number"
-                  label="จำนวนที่ใช้งาน"
-                  name="inUseQuantity"
-                  value={formData.inUseQuantity}
-                  onChange={handleChange}
-                  inputProps={{ min: 0 }}
-                />
-
-                <TextField
-                  fullWidth
-                  required
-                  type="number"
                   label="จำนวนขั้นต่ำ"
                   name="minimumStock"
                   value={formData.minimumStock}
@@ -426,7 +427,6 @@ export default function AssetFormPage() {
                   <MenuItem value="Active">Active</MenuItem>
                   <MenuItem value="In Use">In Use</MenuItem>
                   <MenuItem value="Low Stock">Low Stock</MenuItem>
-                  <MenuItem value="Disposed">Disposed</MenuItem>
                 </TextField>
 
                 <TextField
@@ -475,18 +475,6 @@ export default function AssetFormPage() {
                   value={formData.supplier}
                   onChange={handleChange}
                 />
-
-                <Box sx={{ gridColumn: { xs: '1', sm: '1 / -1' } }}>
-                  <TextField
-                    fullWidth
-                    multiline
-                    rows={2}
-                    label="หมายเหตุ"
-                    name="remark"
-                    value={formData.remark}
-                    onChange={handleChange}
-                  />
-                </Box>
 
                 <Box sx={{ gridColumn: { xs: '1', sm: '1 / -1' }, display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
                   <Button variant="outlined" onClick={() => router.back()} disabled={loading || loadingAsset}>

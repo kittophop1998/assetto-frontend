@@ -156,18 +156,18 @@ export default function AssetsPage() {
       minWidth: 150,
       format: (_, row) => (
         <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center', flexWrap: 'nowrap' }}>
-          <IconButton 
-            size="small" 
-            color="primary" 
+          <IconButton
+            size="small"
+            color="primary"
             onClick={() => router.push(`/assets/${row.id}`)}
             sx={{ minWidth: 'auto' }}
             title="ดูรายละเอียด"
           >
             <VisibilityIcon fontSize="small" />
           </IconButton>
-          <IconButton 
-            size="small" 
-            color="primary" 
+          <IconButton
+            size="small"
+            color="primary"
             onClick={() => {
               sessionStorage.setItem('editAssetData', JSON.stringify(row));
               router.push(`/assets/${row.id}`);
@@ -177,9 +177,9 @@ export default function AssetsPage() {
           >
             <EditIcon fontSize="small" />
           </IconButton>
-          <IconButton 
-            size="small" 
-            color="error" 
+          <IconButton
+            size="small"
+            color="error"
             onClick={() => handleDelete(row.id)}
             sx={{ minWidth: 'auto' }}
           >
@@ -250,18 +250,18 @@ export default function AssetsPage() {
         </Box>
 
         <Box sx={{ display: 'flex', gap: { xs: 1, sm: 2 } }}>
-          <Button 
-            variant="outlined" 
-            startIcon={<FileDownloadIcon sx={{ display: { xs: 'none', sm: 'block' } }} />} 
+          <Button
+            variant="outlined"
+            startIcon={<FileDownloadIcon sx={{ display: { xs: 'none', sm: 'block' } }} />}
             onClick={handleExport}
             size="small"
           >
             <Box sx={{ display: { xs: 'none', sm: 'block' } }}>{t('common.export')}</Box>
             <FileDownloadIcon sx={{ display: { xs: 'block', sm: 'none' } }} />
           </Button>
-          <Button 
-            variant="contained" 
-            startIcon={<AddIcon sx={{ display: { xs: 'none', sm: 'block' } }} />} 
+          <Button
+            variant="contained"
+            startIcon={<AddIcon sx={{ display: { xs: 'none', sm: 'block' } }} />}
             onClick={() => router.push('/assets/new')}
             size="small"
           >

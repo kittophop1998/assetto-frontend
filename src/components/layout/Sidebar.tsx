@@ -53,7 +53,7 @@ export default function Sidebar({ open: externalOpen, mobileOpen = false, onTogg
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [internalOpen, setInternalOpen] = useState(true);
-  
+
   // ใช้ external open ถ้ามี ไม่งั้นใช้ internal open
   const isOpen = externalOpen !== undefined ? externalOpen : internalOpen;
 
@@ -74,14 +74,14 @@ export default function Sidebar({ open: externalOpen, mobileOpen = false, onTogg
       path: '/requests',
     },
     {
-      name: t('menu.departments'),
-      icon: <BusinessIcon />,
-      path: '/departments',
+      name: t('menu.assetApproved'),
+      icon: <AssignmentIcon />,
+      path: '/approved',
     },
     {
-      name: t('menu.reports'),
-      icon: <BarChartIcon />,
-      path: '/reports',
+      name: t('menu.assetReturns'),
+      icon: <AssignmentIcon />,
+      path: '/returns',
     },
     {
       name: t('menu.users'),

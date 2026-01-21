@@ -29,6 +29,7 @@ import {
   Delete as DeleteIcon,
   CheckCircle as CheckCircleIcon,
 } from '@mui/icons-material';
+import { useTranslation } from 'react-i18next';
 
 interface Request {
   id: number;
@@ -43,6 +44,7 @@ interface Request {
 }
 
 export default function RequestsPage() {
+  const { t } = useTranslation('common');
   const [openModal, setOpenModal] = useState(false);
   const [requests, setRequests] = useState<Request[]>([
     {
@@ -212,27 +214,45 @@ export default function RequestsPage() {
       minWidth: 120,
       format: (value) => new Date(value).toLocaleDateString('th-TH'),
     },
-    {
-      id: 'actions',
-      label: 'จัดการ',
-      align: 'center',
-      minWidth: 80,
-      format: (_value, row) => (
-        <IconButton
-          size="small"
-          onClick={(e) => handleMenuOpen(e, row.id)}
-          sx={{ color: 'text.secondary' }}
-        >
-          <MoreVertIcon />
-        </IconButton>
-      ),
-    },
   ];
 
   return (
     <MainLayout title="รายการขอเบิก">
-      <Box sx={{ p: { xs: 2, md: 3 } }}>
-        <Box sx={{ mb: 3 }}>
+      <Box sx={{ mb: { xs: 2, sm: 3 }, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexDirection: { xs: 'column', sm: 'row' }, gap: 2 }}>
+        <Box>
+          <Box sx={{ typography: { xs: 'h6', sm: 'h5' }, fontWeight: 700, mb: 0.5 }}>รายการขอเบิกอุปกรณ์</Box>
+          <Box sx={{ typography: 'body2', color: 'text.secondary', display: { xs: 'none', sm: 'block' } }}>จัดการและติดตามรายการขอเบิกอุปกรณ์ทั้งหมดในระบบ</Box>
+        </Box>
+      </Box>
+
+      {/** Toolbar */}
+      <Box
+        sx={{
+          mb: { xs: 2, sm: 3 },
+          display: 'flex',
+          gap: { xs: 1, sm: 2 },
+          flexWrap: 'wrap',
+          justifyContent: 'flex-end',
+          alignItems: 'center',
+        }}
+      >
+        <Box sx={{ display: 'flex', gap: { xs: 1, sm: 2 } }}>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={handleOpenModal}
+            sx={{
+              borderRadius: 2,
+              boxShadow: 2,
+              '&:hover': { boxShadow: 4 },
+            }}
+          >
+            เพิ่มรายการขอเบิก
+          </Button>
+        </Box>
+      </Box>
+
+      {/* <Box sx={{ mb: 3 }}>
           <Breadcrumbs
             separator={<ChevronRightIcon fontSize="small" />}
             sx={{ mb: 1, fontSize: '0.875rem', color: 'text.secondary' }}
@@ -244,108 +264,69 @@ export default function RequestsPage() {
               รายการขอเบิก
             </Typography>
           </Breadcrumbs>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Box>
-              <Typography variant="h4" fontWeight="bold" gutterBottom>
-                รายการขอเบิกอุปกรณ์
-              </Typography>
-              <Typography color="text.secondary">
-                จัดการและติดตามรายการขอเบิกอุปกรณ์ทั้งหมดในระบบ
-              </Typography>
-            </Box>
-          </Box>
-        </Box>
+        </Box> */}
 
-        <Paper elevation={0} sx={{ borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
-          <Box
-            sx={{
-              px: 3,
-              py: 2,
-              bgcolor: 'grey.50',
-              borderBottom: '1px solid',
-              borderColor: 'divider',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-            }}
-          >
-            <Typography variant="h6" fontWeight={600}>
-              รายการทั้งหมด ({requests.length})
-            </Typography>
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={handleOpenModal}
-              sx={{
-                borderRadius: 2,
-                boxShadow: 2,
-                '&:hover': { boxShadow: 4 },
-              }}
-            >
-              เพิ่มรายการขอเบิก
-            </Button>
-          </Box>
-
-          <DataTable
-            columns={columns}
-            rows={requests}
-            page={0}
-            rowsPerPage={10}
-            totalRows={requests.length}
-            emptyMessage="ไม่มีรายการขอเบิก"
-          />
-        </Paper>
-
-        <RequestModal
-          open={openModal}
-          onClose={handleCloseModal}
-          onSubmit={handleSubmit}
+      {/** Table */}
+      <Paper elevation={0} sx={{ borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
+        <DataTable
+          columns={columns}
+          rows={requests}
+          page={0}
+          rowsPerPage={10}
+          totalRows={requests.length}
+          emptyMessage="ไม่มีรายการขอเบิก"
         />
+      </Paper>
 
-        <Menu
-          anchorEl={anchorEl}
-          open={Boolean(anchorEl)}
-          onClose={handleMenuClose}
-          PaperProps={{
-            sx: { borderRadius: 2, minWidth: 180 },
-          }}
-        >
-          <MenuItem onClick={handleView}>
-            <ListItemIcon>
-              <VisibilityIcon fontSize="small" />
-            </ListItemIcon>
-            <ListItemText>ดูรายละเอียด</ListItemText>
-          </MenuItem>
-          <MenuItem onClick={handleEdit}>
-            <ListItemIcon>
-              <EditIcon fontSize="small" />
-            </ListItemIcon>
-            <ListItemText>แก้ไข</ListItemText>
-          </MenuItem>
-          <MenuItem onClick={handleDelete} sx={{ color: 'error.main' }}>
-            <ListItemIcon>
-              <DeleteIcon fontSize="small" color="error" />
-            </ListItemIcon>
-            <ListItemText>ลบ</ListItemText>
-          </MenuItem>
-        </Menu>
+      <RequestModal
+        open={openModal}
+        onClose={handleCloseModal}
+        onSubmit={handleSubmit}
+      />
 
-        <Snackbar
-          open={snackbar.open}
-          autoHideDuration={3000}
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={handleMenuClose}
+        PaperProps={{
+          sx: { borderRadius: 2, minWidth: 180 },
+        }}
+      >
+        <MenuItem onClick={handleView}>
+          <ListItemIcon>
+            <VisibilityIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>ดูรายละเอียด</ListItemText>
+        </MenuItem>
+        <MenuItem onClick={handleEdit}>
+          <ListItemIcon>
+            <EditIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>แก้ไข</ListItemText>
+        </MenuItem>
+        <MenuItem onClick={handleDelete} sx={{ color: 'error.main' }}>
+          <ListItemIcon>
+            <DeleteIcon fontSize="small" color="error" />
+          </ListItemIcon>
+          <ListItemText>ลบ</ListItemText>
+        </MenuItem>
+      </Menu>
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={3000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert
           onClose={handleCloseSnackbar}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+          severity={snackbar.severity}
+          sx={{ borderRadius: 2 }}
+          icon={<CheckCircleIcon />}
         >
-          <Alert
-            onClose={handleCloseSnackbar}
-            severity={snackbar.severity}
-            sx={{ borderRadius: 2 }}
-            icon={<CheckCircleIcon />}
-          >
-            {snackbar.message}
-          </Alert>
-        </Snackbar>
-      </Box>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </MainLayout>
   );
 }

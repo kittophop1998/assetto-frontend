@@ -32,14 +32,12 @@ export interface AssetFormData {
   unit: string;
   totalQuantity: number;
   availableQuantity?: number;
-  inUseQuantity?: number;
   minimumStock: number;
   status?: string;
   departmentId: number;
   purchaseDate?: string;
   costPerUnit?: number;
   supplier?: string;
-  remark?: string;
 }
 
 export interface AssetListParams {
