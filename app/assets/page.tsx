@@ -264,7 +264,7 @@ export default function AssetsPage() {
           <Button
             variant="contained"
             startIcon={<AddIcon sx={{ display: { xs: 'none', sm: 'block' } }} />}
-            onClick={() => router.push('/assets/new')}
+            onClick={() => router.push('/assets/create')}
             size="small"
           >
             <Box sx={{ display: { xs: 'none', sm: 'block' } }}>{t('asset.add')}</Box>

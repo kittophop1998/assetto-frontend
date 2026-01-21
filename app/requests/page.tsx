@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import MainLayout from '@/src/components/layout/MainLayout';
 import DataTable, { Column } from '@/src/components/common/DataTable';
 import RequestModal, { RequestFormData } from '@/src/components/requests/RequestModal';
@@ -8,11 +9,7 @@ import StatusBadge from '@/src/components/common/StatusBadge';
 import {
   Box,
   Paper,
-  Typography,
   Button,
-  Breadcrumbs,
-  Link,
-  IconButton,
   Menu,
   MenuItem,
   ListItemIcon,
@@ -22,14 +19,11 @@ import {
 } from '@mui/material';
 import {
   Add as AddIcon,
-  NavigateNext as ChevronRightIcon,
-  MoreVert as MoreVertIcon,
   Visibility as VisibilityIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
   CheckCircle as CheckCircleIcon,
 } from '@mui/icons-material';
-import { useTranslation } from 'react-i18next';
 
 interface Request {
   id: number;
@@ -44,7 +38,7 @@ interface Request {
 }
 
 export default function RequestsPage() {
-  const { t } = useTranslation('common');
+  const router = useRouter();
   const [openModal, setOpenModal] = useState(false);
   const [requests, setRequests] = useState<Request[]>([
     {
@@ -89,7 +83,9 @@ export default function RequestsPage() {
     severity: 'success' as 'success' | 'error' | 'info',
   });
 
-  const handleOpenModal = () => setOpenModal(true);
+  const handleOpenModal = () => {
+    router.push('/requests/create');
+  };
   const handleCloseModal = () => setOpenModal(false);
 
   const handleSubmit = (data: RequestFormData) => {

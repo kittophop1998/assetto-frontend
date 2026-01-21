@@ -32,14 +32,14 @@ import {
   Delete as DeleteIcon
 } from '@mui/icons-material';
 import { AssetFormData, assetService, AssetItem, assetItemService, CreateAssetItemDTO } from '@/src/services/assetService';
-import { masterService, Department, Category } from '@/src/services/masterService';
 import MainLayout from '@/src/components/layout/MainLayout';
+import { Category, Department, getMasterData } from '@/src/services/masterService';
 
 export default function AssetFormPage() {
   const router = useRouter();
   const params = useParams();
   const [isMounted, setIsMounted] = useState(false);
-  const isEdit = params?.id && params.id !== 'new';
+  const isEdit = params?.id && params.id !== 'create';
 
   const [loading, setLoading] = useState(false);
   const [loadingAsset, setLoadingAsset] = useState(false);
@@ -89,7 +89,7 @@ export default function AssetFormPage() {
 
   const loadMasterData = async () => {
     try {
-      const masterData = await masterService.getMasterData();
+      const masterData = await getMasterData();
       setDepartments(masterData.departments);
       setCategories(masterData.categories);
     } catch (error) {
