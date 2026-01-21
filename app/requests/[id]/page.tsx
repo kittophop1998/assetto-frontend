@@ -201,7 +201,7 @@ export default function RequestFormPage() {
     }, [isMounted]);
 
     return (
-        <MainLayout title={isEdit ? t('request.edit_request') : t('request.new_request')}>
+        <MainLayout title={isEdit ? t('request.edit') : t('request.create')}>
             {!isMounted ? (
                 <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
                     <Typography color="text.secondary">กำลังโหลด...</Typography>

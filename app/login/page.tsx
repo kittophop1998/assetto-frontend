@@ -146,6 +146,9 @@ export default function LoginPage() {
             <Typography variant="body1" sx={{ opacity: 0.9 }}>
               {t('auth.welcomeMessage')}
             </Typography>
+            <Typography variant="body1" sx={{ opacity: 0.9 }}>
+              {t('app.title')}
+            </Typography>
           </Box>
 
           {/* Right Side: Login Form */}
