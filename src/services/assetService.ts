@@ -1,6 +1,6 @@
 import axiosInstance from "../utils/axios";
 
-export type AssetStatusType = 'ACTIVE' | 'IN_USE' | 'LOW_STOCK';
+export type AssetStatusType = 'ACTIVE' | 'INACTIVE' | 'IN_USE' | 'LOW_STOCK';
 
 export interface Asset {
   id: string;
@@ -55,131 +55,52 @@ export interface AssetUsageHistory {
   status: string;
 }
 
-export const assetService = {
-  // Get all assets with filters
-  getAssets: async (params: AssetListParams = {}) => {
-    const response = await axiosInstance.get('/assets', { params });
-    return response.data;
-  },
-
-  // Get asset by ID
-  getAssetById: async (id: string): Promise<Asset> => {
-    const response = await axiosInstance.get(`/assets/${id}`);
-    return response.data.data;
-  },
-
-  // Create new asset
-  createAsset: async (data: AssetFormData): Promise<Asset> => {
-    const response = await axiosInstance.post('/assets', data);
-    return response.data.data;
-  },
-
-  // Update asset
-  updateAsset: async (id: string, data: Partial<AssetFormData>): Promise<Asset> => {
-    const response = await axiosInstance.put(`/assets/${id}`, data);
-    return response.data.data;
-  },
-
-  // Delete asset
-  deleteAsset: async (id: string): Promise<void> => {
-    await axiosInstance.delete(`/assets/${id}`);
-  },
-
-  // Get asset usage history
-  getAssetUsageHistory: async (id: string): Promise<AssetUsageHistory[]> => {
-    const response = await axiosInstance.get(`/assets/${id}/usage-history`);
-    return response.data;
-  },
-
-  // Adjust asset stock
-  adjustStock: async (id: string, quantity: number, reason: string) => {
-    const response = await axiosInstance.post(`/assets/${id}/adjust-stock`, {
-      quantity,
-      reason,
-    });
-    return response.data;
-  },
-
-  // Get asset categories
-  getCategories: async (): Promise<string[]> => {
-    const response = await axiosInstance.get('/assets/categories');
-    return response.data;
-  },
-
-  // Export assets to Excel
-  exportAssets: async (params: AssetListParams = {}) => {
-    const response = await axiosInstance.get('/assets/export', {
-      params,
-      responseType: 'blob',
-    });
-    return response.data;
-  },
+export const getAssets = async (params: AssetListParams = {}) => {
+  const response = await axiosInstance.get('/assets', { params });
+  return response.data;
 };
 
-// Asset Item interfaces
-export interface AssetItem {
-  id: number;
-  assetModelId: number;
-  serialNumber: string;
-  status: 'AVAILABLE' | 'IN_USE' | 'MAINTENANCE' | 'DISPOSED';
-  purchaseDate: string;
-  warrantyEnd: string;
-  remark?: string;
-  createdAt: string;
-  updatedAt: string;
-  assetModel?: {
-    id: number;
-    modelCode: string;
-    name: string;
-    category: string;
-    department: string;
-  };
-}
+export const getAssetById = async (id: string): Promise<Asset> => {
+  const response = await axiosInstance.get(`/assets/${id}`);
+  return response.data.data;
+};
 
-export interface CreateAssetItemDTO {
-  assetModelId: number;
-  serialNumber: string;
-  purchaseDate?: string;
-  warrantyEnd?: string;
-  remark?: string;
-}
+export const createAsset = async (data: AssetFormData): Promise<Asset> => {
+  const response = await axiosInstance.post('/assets', data);
+  return response.data.data;
+};
 
-export interface UpdateAssetItemDTO {
-  serialNumber?: string;
-  status?: 'AVAILABLE' | 'IN_USE' | 'MAINTENANCE' | 'DISPOSED';
-  purchaseDate?: string;
-  warrantyEnd?: string;
-  remark?: string;
-}
+export const updateAsset = async (id: string, data: Partial<AssetFormData>): Promise<Asset> => {
+  const response = await axiosInstance.put(`/assets/${id}`, data);
+  return response.data.data;
+};
 
-export const assetItemService = {
-  getAssetItems: async (assetModelId?: number): Promise<AssetItem[]> => {
-    const params = assetModelId ? { assetModelId } : {};
-    const response = await axiosInstance.get('/asset-items', { params });
-    
-    return response.data.data;
-  },
+export const deleteAsset = async (id: string): Promise<void> => {
+  await axiosInstance.delete(`/assets/${id}`);
+};
 
-  // Get asset item by ID
-  getAssetItemById: async (id: number): Promise<AssetItem> => {
-    const response = await axiosInstance.get(`/asset-items/${id}`);
-    return response.data.data;
-  },
+export const getAssetUsageHistory = async (id: string): Promise<AssetUsageHistory[]> => {
+  const response = await axiosInstance.get(`/assets/${id}/usage-history`);
+  return response.data;
+};
 
-  // Create new asset item
-  createAssetItem: async (data: CreateAssetItemDTO): Promise<AssetItem> => {
-    const response = await axiosInstance.post('/asset-items', data);
-    return response.data.data;
-  },
+export const adjustStock = async (id: string, quantity: number, reason: string) => {
+  const response = await axiosInstance.post(`/assets/${id}/adjust-stock`, {
+    quantity,
+    reason,
+  });
+  return response.data;
+};
 
-  // Update asset item
-  updateAssetItem: async (id: number, data: UpdateAssetItemDTO): Promise<AssetItem> => {
-    const response = await axiosInstance.put(`/asset-items/${id}`, data);
-    return response.data.data;
-  },
+export const getCategories = async (): Promise<string[]> => {
+  const response = await axiosInstance.get('/assets/categories');
+  return response.data;
+};
 
-  // Delete asset item
-  deleteAssetItem: async (id: number): Promise<void> => {
-    await axiosInstance.delete(`/asset-items/${id}`);
-  },
+export const exportAssets = async (params: AssetListParams = {}) => {
+  const response = await axiosInstance.get('/assets/export', {
+    params,
+    responseType: 'blob',
+  });
+  return response.data;
 };

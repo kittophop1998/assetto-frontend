@@ -29,7 +29,7 @@ import {
     Business as BusinessIcon,
 } from '@mui/icons-material';
 import { Select } from "@mui/material";
-import { assetService, Asset } from "@/src/services/assetService";
+import { Asset, getAssets } from "@/src/services/assetService";
 import { getDepartment, Department } from "@/src/services/masterService";
 
 interface FormData {
@@ -151,7 +151,7 @@ export default function RequestFormPage() {
         const loadAssets = async () => {
             try {
                 setLoadingAssets(true);
-                const response = await assetService.getAssets({ 
+                const response = await getAssets({ 
                     status: 'ACTIVE',
                     limit: 100 
                 });

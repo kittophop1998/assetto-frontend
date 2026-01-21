@@ -31,9 +31,10 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon
 } from '@mui/icons-material';
-import { AssetFormData, assetService, AssetItem, assetItemService, CreateAssetItemDTO } from '@/src/services/assetService';
+import { AssetFormData, createAsset, getAssetById, updateAsset } from '@/src/services/assetService';
 import MainLayout from '@/src/components/layout/MainLayout';
 import { Category, Department, getMasterData } from '@/src/services/masterService';
+import { AssetItem, createAssetItem, CreateAssetItemDTO, deleteAssetItem, getAssetItems, updateAssetItem } from '@/src/services/assetItemService';
 
 export default function AssetFormPage() {
   const router = useRouter();
@@ -102,7 +103,7 @@ export default function AssetFormPage() {
 
     setLoadingItems(true);
     try {
-      const data = await assetItemService.getAssetItems(Number(params.id));
+      const data = await getAssetItems(Number(params.id));
       setEquipments(data);
     } catch (error) {
       console.error('Failed to load asset items:', error);
@@ -115,7 +116,7 @@ export default function AssetFormPage() {
   const loadAsset = async () => {
     setLoadingAsset(true);
     try {
-      const asset = await assetService.getAssetById(params.id as string);
+      const asset = await getAssetById(params.id as string);
       setFormData({
         code: asset.code,
         name: asset.name,
@@ -165,10 +166,10 @@ export default function AssetFormPage() {
       };
 
       if (isEdit) {
-        await assetService.updateAsset(params.id as string, requestBody);
+        await updateAsset(params.id as string, requestBody);
         alert('อัปเดตสินทรัพย์สำเร็จ');
       } else {
-        await assetService.createAsset(requestBody);
+        await createAsset(requestBody);
         alert('สร้างสินทรัพย์สำเร็จ');
       }
       router.push('/assets');
@@ -222,7 +223,7 @@ export default function AssetFormPage() {
     try {
       if (editingEquipment) {
         // Update existing item
-        const updated = await assetItemService.updateAssetItem(editingEquipment.id, {
+        const updated = await updateAssetItem(editingEquipment.id, {
           serialNumber: equipmentForm.serialNumber,
           purchaseDate: equipmentForm.purchaseDate,
           warrantyEnd: equipmentForm.warrantyEnd,
@@ -242,7 +243,7 @@ export default function AssetFormPage() {
           remark: equipmentForm.remark,
         };
 
-        const newItem = await assetItemService.createAssetItem(createData);
+        const newItem = await createAssetItem(createData);
         setEquipments(prev => [...prev, newItem]);
       }
       handleCloseModal();
@@ -267,7 +268,7 @@ export default function AssetFormPage() {
     if (!confirm('ต้องการลบอุปกรณ์นี้หรือไม่?')) return;
 
     try {
-      await assetItemService.deleteAssetItem(id);
+      await deleteAssetItem(id);
       setEquipments(prev => prev.filter(eq => eq.id !== id));
     } catch (error) {
       console.error('Failed to delete equipment:', error);

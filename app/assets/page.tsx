@@ -21,7 +21,7 @@ import {
   Visibility as VisibilityIcon,
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
-import { Asset, assetService } from '@/src/services/assetService';
+import { Asset, deleteAsset, exportAssets, getAssets } from '@/src/services/assetService';
 import DataTable, { Column } from '@/src/components/common/DataTable';
 import StatusBadge from '@/src/components/common/StatusBadge';
 import MainLayout from '@/src/components/layout/MainLayout';
@@ -44,7 +44,7 @@ export default function AssetsPage() {
   const loadAssets = async () => {
     setLoading(true);
     try {
-      const response = await assetService.getAssets({
+      const response = await getAssets({
         page: page + 1,
         limit: rowsPerPage,
         search,
@@ -63,7 +63,7 @@ export default function AssetsPage() {
 
   const handleExport = async () => {
     try {
-      const blob = await assetService.exportAssets({ search });
+      const blob = await exportAssets({ search });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
@@ -79,7 +79,7 @@ export default function AssetsPage() {
   const handleDelete = async (id: string) => {
     if (confirm(t('common.confirmDelete'))) {
       try {
-        await assetService.deleteAsset(id);
+        await deleteAsset(id);
         loadAssets();
       } catch (error) {
         console.error('Failed to delete asset:', error);
