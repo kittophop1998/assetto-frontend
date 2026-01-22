@@ -106,7 +106,6 @@ export default function RequestFormPage() {
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
 
-        // ตรวจสอบว่ากรอกข้อมูลครบถ้วน
         if (!formData.assetId || !formData.requesterName || !formData.department ||
             !formData.quantity || !formData.requestDate || !formData.approver) {
             setSnackbar({
@@ -114,6 +113,7 @@ export default function RequestFormPage() {
                 message: 'กรุณากรอกข้อมูลให้ครบถ้วน',
                 severity: 'error',
             });
+            
             return;
         }
 
@@ -126,7 +126,6 @@ export default function RequestFormPage() {
             severity: 'success',
         });
 
-        // รอ 1.5 วินาทีแล้วกลับไปหน้ารายการ
         setTimeout(() => {
             router.push('/requests');
         }, 1500);
