@@ -3,7 +3,7 @@ import axiosInstance from "../utils/axios";
 export type AssetItemStatus = 'AVAILABLE' | 'IN_USE' | 'MAINTENANCE' | 'DISPOSED';
 
 export interface CreateAssetItemDTO {
-  assetModelId: number;
+  assetId: number;
   serialNumber: string;
   purchaseDate?: string;
   warrantyEnd?: string;
@@ -37,9 +37,8 @@ export interface AssetItem {
   };
 }
 
-export const getAssetItems = async (assetModelId?: number): Promise<AssetItem[]> => {
-    const params = assetModelId ? { assetModelId } : {};
-    const response = await axiosInstance.get('/asset-items', { params });
+export const getAssetItems = async (assetModelId: number): Promise<AssetItem[]> => {
+    const response = await axiosInstance.get(`/asset-items/${assetModelId}`);
     
     return response.data.data;
 };
@@ -49,9 +48,9 @@ export const getAssetItemById = async (id: number): Promise<AssetItem> => {
     return response.data.data;
 };
 
-export const createAssetItem = async (data: CreateAssetItemDTO): Promise<AssetItem> => {
+export const createAssetItem = async (data: CreateAssetItemDTO): Promise<string> => {
     const response = await axiosInstance.post('/asset-items', data);
-    return response.data.data;
+    return response.data.data; // Returns success message string
 };
 
 export const updateAssetItem = async (id: number, data: UpdateAssetItemDTO): Promise<AssetItem> => {

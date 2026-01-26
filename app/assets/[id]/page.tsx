@@ -77,14 +77,20 @@ export default function AssetFormPage() {
   useEffect(() => {
     if (!isMounted) return;
 
-    loadMasterData();
-    if (isEdit) {
-      loadAsset();
-    }
+    const loadData = async () => {
+      // Always load master data
+      await loadMasterData();
+      
+      // If editing an existing asset, load both asset detail and items in parallel
+      if (isEdit) {
+        await Promise.all([
+          loadAsset(),
+          loadEquipments()
+        ]);
+      }
+    };
 
-    if (params.id && params.id !== 'new') {
-      loadEquipments();
-    }
+    loadData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isMounted]);
 
@@ -99,15 +105,16 @@ export default function AssetFormPage() {
   };
 
   const loadEquipments = async () => {
-    if (!params.id || params.id === 'new') return;
+    if (!params.id || params.id === 'create') return;
 
     setLoadingItems(true);
     try {
       const data = await getAssetItems(Number(params.id));
-      setEquipments(data);
+      setEquipments(data || []);
     } catch (error) {
       console.error('Failed to load asset items:', error);
-      alert('ไม่สามารถโหลดข้อมูลอุปกรณ์ได้');
+      setEquipments([]);
+      // Silently fail for asset items - user can still manage the asset
     } finally {
       setLoadingItems(false);
     }
@@ -120,14 +127,17 @@ export default function AssetFormPage() {
       setFormData({
         code: asset.code,
         name: asset.name,
-        categoryId: asset.categoryId,
+        categoryId: asset.categoryId || asset.category_id || 0,
         description: asset.description || '',
         unit: asset.unit,
-        totalQuantity: asset.totalQuantity,
-        availableQuantity: asset.availableQuantity,
-        minimumQty: asset.minimumQty,
+        totalQuantity: asset.totalQuantity || asset.total_quantity || 0,
+        availableQuantity: asset.availableQuantity || asset.available_quantity || 0,
+        minimumQty: asset.minimumQty || asset.minimum_qty || 0,
         status: asset.status,
-        departmentId: typeof asset.departmentId === 'string' ? parseInt(asset.departmentId) : asset.departmentId,
+        departmentId: (() => {
+          const deptId = asset.departmentId || asset.department_id;
+          return typeof deptId === 'string' ? parseInt(deptId) : (deptId || 0);
+        })(),
       });
     } catch (error) {
       console.error('Failed to load asset:', error);
@@ -236,15 +246,16 @@ export default function AssetFormPage() {
       } else {
         // Create new item
         const createData: CreateAssetItemDTO = {
-          assetModelId: Number(params.id),
+          assetId: Number(params.id),
           serialNumber: equipmentForm.serialNumber,
           purchaseDate: equipmentForm.purchaseDate,
           warrantyEnd: equipmentForm.warrantyEnd,
           remark: equipmentForm.remark,
         };
 
-        const newItem = await createAssetItem(createData);
-        setEquipments(prev => [...prev, newItem]);
+        await createAssetItem(createData);
+        // Reload the equipments list to show the newly created item
+        await loadEquipments();
       }
       handleCloseModal();
     } catch (error) {
@@ -297,7 +308,7 @@ export default function AssetFormPage() {
             <CardContent>
               {loadingAsset ? (
                 <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
-                  <Typography color="text.secondary">กำลังโหลดข้อมูล...</Typography>
+                  <Typography color="text.secondary">กำลังโหลดข้อมูลสินทรัพย์...</Typography>
                 </Box>
               ) : (
                 <form onSubmit={handleSubmit}>
@@ -453,7 +464,7 @@ export default function AssetFormPage() {
           </Card>
 
           {/* Equipment List Section - Show when viewing/editing existing asset */}
-          {params.id !== 'new' && (
+          {params.id !== 'create' && (
             <Card sx={{ mt: 3 }}>
               <CardContent>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
@@ -473,7 +484,7 @@ export default function AssetFormPage() {
 
                 {loadingItems ? (
                   <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 200 }}>
-                    <Typography color="text.secondary">กำลังโหลดข้อมูล...</Typography>
+                    <Typography color="text.secondary">กำลังโหลดรายการอุปกรณ์...</Typography>
                   </Box>
                 ) : (
                   <TableContainer component={Paper} variant="outlined">
