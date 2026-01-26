@@ -39,6 +39,7 @@ export default function AssetsPage() {
 
   useEffect(() => {
     loadAssets();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, rowsPerPage, search]);
 
   const loadAssets = async () => {

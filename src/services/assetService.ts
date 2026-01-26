@@ -3,20 +3,30 @@ import axiosInstance from "../utils/axios";
 export type AssetStatusType = 'ACTIVE' | 'INACTIVE' | 'IN_USE' | 'LOW_STOCK';
 
 export interface Asset {
-  id: string;
+  id: string | number;
   code: string;
   name: string;
-  category: string;
-  categoryId: number;
+  category?: string;
+  category_id: number;
+  category_name?: string;
+  categoryId?: number;
+  categoryName?: string;
   description: string;
   unit: string;
-  totalQuantity: number;
-  availableQuantity: number;
-  departmentId: string | number;
+  total_quantity?: number;
+  totalQuantity?: number;
+  available_quantity?: number;
+  availableQuantity?: number;
+  department_id: string | number;
+  department_name?: string;
+  departmentId?: string | number;
   departmentName?: string;
-  minimumQty: number;
+  minimum_qty: number;
+  minimumQty?: number;
   status: AssetStatusType;
+  created_at?: string;
   createdAt?: string;
+  updated_at?: string;
   updatedAt?: string;
 }
 
@@ -57,7 +67,31 @@ export interface AssetUsageHistory {
 
 export const getAssets = async (params: AssetListParams = {}) => {
   const response = await axiosInstance.get('/assets', { params });
-  return response.data;
+
+  // Map API response to match expected format
+  const data = response.data;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const assets = (data.data || []).map((asset: any) => ({
+    ...asset,
+    id: asset.id,
+    categoryId: asset.category_id,
+    category: asset.category_name,
+    categoryName: asset.category_name,
+    totalQuantity: asset.total_quantity || 0,
+    availableQuantity: asset.available_quantity || 0,
+    departmentId: asset.department_id,
+    departmentName: asset.department_name,
+    minimumQty: asset.minimum_qty,
+    createdAt: asset.created_at,
+    updatedAt: asset.updated_at,
+  }));
+
+  return {
+    data: assets,
+    total: data.pagination?.totalItems || data.pagination?.total || 0,
+    page: data.pagination?.page || 1,
+    totalPages: data.pagination?.totalPages || 1,
+  };
 };
 
 export const getAssetById = async (id: string): Promise<Asset> => {
