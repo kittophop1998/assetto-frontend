@@ -62,7 +62,7 @@ export const requestService = {
 
   // Approve request with serial numbers
   approveRequest: async (id: number, data: { serialNumbers: string[] }): Promise<ApiResponse<string>> => {
-    const response = await axiosInstance.post(`/asset-requests/${id}/approve`, data);
+    const response = await axiosInstance.put(`/asset-requests/${id}/approve`, data);
     return response.data;
   },
 

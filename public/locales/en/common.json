@@ -42,7 +42,17 @@
     "quickActions": "Quick Actions",
     "addAsset": "Add New Asset",
     "createRequest": "Create Request",
-    "exportReport": "Export Monthly Report"
+    "exportReport": "Export Monthly Report",
+    "departments": "Departments",
+    "approved": "Approved",
+    "pending": "Pending",
+    "assetsByDepartment": "Assets by Department",
+    "total": "Total",
+    "rejected": "Rejected",
+    "requestCode": "Request Code",
+    "serialNumber": "Serial Number",
+    "status": "Status",
+    "noDataAvailable": "No asset data available"
   },
   "asset": {
     "title": "Asset Management",
