@@ -59,4 +59,16 @@ export const requestService = {
     const response = await axiosInstance.delete(`/asset-requests/${id}`);
     return response.data;
   },
+
+  // Approve request with serial numbers
+  approveRequest: async (id: number, data: { serialNumbers: string[] }): Promise<ApiResponse<string>> => {
+    const response = await axiosInstance.post(`/asset-requests/${id}/approve`, data);
+    return response.data;
+  },
+
+  // Reject request
+  rejectRequest: async (id: number, data: { reason: string }): Promise<ApiResponse<string>> => {
+    const response = await axiosInstance.post(`/asset-requests/${id}/reject`, data);
+    return response.data;
+  },
 };

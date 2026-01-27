@@ -102,6 +102,28 @@
     "review": "ตรวจสอบ",
     "comment": "ความคิดเห็น"
   },
+  "approve": {
+    "title": "อนุมัติคำขอ",
+    "approve": "อนุมัติ",
+    "reject": "ปฏิเสธ",
+    "description": "รายการคำขอทรัพย์สินที่รออนุมัติ กรุณากรอกหมายเลข Serial Number (SN) สำหรับแต่ละรายการ",
+    "serialNumbers": "หมายเลข Serial Number (SN)",
+    "serialNumberPlaceholder": "กรอกหมายเลข SN (เช่น SN20240001)",
+    "addSerialNumber": "เพิ่ม SN",
+    "confirm": "ยืนยันการอนุมัติ",
+    "approving": "กำลังอนุมัติ...",
+    "confirmReject": "คุณแน่ใจหรือไม่ที่จะปฏิเสธคำขอนี้?",
+    "successMessage": "อนุมัติคำขอเรียบร้อยแล้ว",
+    "errorMessage": "เกิดข้อผิดพลาดในการอนุมัติคำขอ",
+    "rejectSuccessMessage": "ปฏิเสธคำขอเรียบร้อยแล้ว",
+    "errorRejectMessage": "เกิดข้อผิดพลาดในการปฏิเสธคำขอ",
+    "errorLoadRequests": "ไม่สามารถโหลดรายการคำขอได้",
+    "noRequests": "ไม่มีคำขอที่รออนุมัติ",
+    "errorNoSerialNumber": "กรุณากรอกหมายเลข Serial Number อย่างน้อย 1 รายการ",
+    "errorSerialNumberCount": "จำนวน Serial Number ต้องตรงกับจำนวนที่ขอ ({{required}} รายการ)",
+    "errorDuplicateSerialNumber": "พบหมายเลข Serial Number ซ้ำกัน กรุณาตรวจสอบอีกครั้ง",
+    "hint": "กรุณากรอกหมายเลข Serial Number ทั้งหมด {{count}} รายการ"
+  },
   "department": {
     "title": "แผนก/สาขา",
     "code": "รหัส",

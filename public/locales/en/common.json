@@ -99,6 +99,28 @@
     "review": "Review",
     "comment": "Comment"
   },
+  "approve": {
+    "title": "Approve Request",
+    "approve": "Approve",
+    "reject": "Reject",
+    "description": "List of pending asset requests. Please enter Serial Number (SN) for each item.",
+    "serialNumbers": "Serial Number (SN)",
+    "serialNumberPlaceholder": "Enter SN (e.g., SN20240001)",
+    "addSerialNumber": "Add SN",
+    "confirm": "Confirm Approval",
+    "approving": "Approving...",
+    "confirmReject": "Are you sure you want to reject this request?",
+    "successMessage": "Request approved successfully",
+    "errorMessage": "Failed to approve request",
+    "rejectSuccessMessage": "Request rejected successfully",
+    "errorRejectMessage": "Failed to reject request",
+    "errorLoadRequests": "Failed to load requests",
+    "noRequests": "No pending requests",
+    "errorNoSerialNumber": "Please enter at least one Serial Number",
+    "errorSerialNumberCount": "Serial Number count must match requested quantity ({{required}} items)",
+    "errorDuplicateSerialNumber": "Duplicate Serial Numbers found. Please check again.",
+    "hint": "Please enter all {{count}} Serial Numbers"
+  },
   "department": {
     "title": "Departments",
     "code": "Code",
