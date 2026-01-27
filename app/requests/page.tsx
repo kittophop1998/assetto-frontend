@@ -1,10 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import MainLayout from '@/src/components/layout/MainLayout';
 import DataTable, { Column } from '@/src/components/common/DataTable';
-import RequestModal, { RequestFormData } from '@/src/components/requests/RequestModal';
 import StatusBadge from '@/src/components/common/StatusBadge';
 import {
   Box,
@@ -16,6 +15,7 @@ import {
   ListItemText,
   Alert,
   Snackbar,
+  CircularProgress,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -24,57 +24,12 @@ import {
   Delete as DeleteIcon,
   CheckCircle as CheckCircleIcon,
 } from '@mui/icons-material';
-
-interface Request {
-  id: number;
-  assetId: string;
-  assetName: string;
-  requesterName: string;
-  quantity: number;
-  requestDate: string;
-  approver: string;
-  status: 'pending' | 'approved' | 'rejected';
-  createdAt: string;
-}
+import { requestService, AssetRequest } from '@/src/services/requestService';
 
 export default function RequestsPage() {
   const router = useRouter();
-  const [openModal, setOpenModal] = useState(false);
-  const [requests, setRequests] = useState<Request[]>([
-    {
-      id: 1,
-      assetId: '1',
-      assetName: 'คอมพิวเตอร์ Desktop Dell OptiPlex 7090',
-      requesterName: 'สมชาย ใจดี',
-      quantity: 2,
-      requestDate: '2026-01-25',
-      approver: 'วิภาวี เรียนเก่ง (Director)',
-      status: 'pending',
-      createdAt: '2026-01-18',
-    },
-    {
-      id: 2,
-      assetId: '4',
-      assetName: 'เมาส์ไร้สาย Logitech MX Master 3',
-      requesterName: 'พิมพ์ชนก รักงาม',
-      quantity: 1,
-      requestDate: '2026-01-22',
-      approver: 'มานะ อดทน (IT Head)',
-      status: 'approved',
-      createdAt: '2026-01-15',
-    },
-    {
-      id: 3,
-      assetId: '3',
-      assetName: 'จอภาพ LG UltraWide 34"',
-      requesterName: 'วรพงษ์ ทำดี',
-      quantity: 5,
-      requestDate: '2026-01-20',
-      approver: 'สมชาย รักดี (Manager)',
-      status: 'rejected',
-      createdAt: '2026-01-14',
-    },
-  ]);
+  const [requests, setRequests] = useState<AssetRequest[]>([]);
+  const [loading, setLoading] = useState(true);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedRequest, setSelectedRequest] = useState<number | null>(null);
   const [snackbar, setSnackbar] = useState({
@@ -83,36 +38,32 @@ export default function RequestsPage() {
     severity: 'success' as 'success' | 'error' | 'info',
   });
 
+  // Load requests from API
+  useEffect(() => {
+    loadRequests();
+  }, []);
+
+  const loadRequests = async () => {
+    try {
+      setLoading(true);
+      const response = await requestService.getRequests();
+      if (response.success) {
+        setRequests(response.data);
+      }
+    } catch (error) {
+      console.error('Error loading requests:', error);
+      setSnackbar({
+        open: true,
+        message: 'ไม่สามารถโหลดข้อมูลรายการขอเบิกได้',
+        severity: 'error',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleOpenModal = () => {
     router.push('/requests/create');
-  };
-  const handleCloseModal = () => setOpenModal(false);
-
-  const handleSubmit = (data: RequestFormData) => {
-    const newRequest: Request = {
-      id: requests.length + 1,
-      assetId: data.assetId,
-      assetName: data.assetName,
-      requesterName: data.requesterName,
-      quantity: data.quantity,
-      requestDate: data.requestDate,
-      approver: data.approver,
-      status: 'pending',
-      createdAt: new Date().toISOString().split('T')[0],
-    };
-
-    setRequests([newRequest, ...requests]);
-    handleCloseModal();
-    setSnackbar({
-      open: true,
-      message: 'เพิ่มรายการขอเบิกเรียบร้อยแล้ว',
-      severity: 'success',
-    });
-  };
-
-  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, requestId: number) => {
-    setAnchorEl(event.currentTarget);
-    setSelectedRequest(requestId);
   };
 
   const handleMenuClose = () => {
@@ -121,23 +72,37 @@ export default function RequestsPage() {
   };
 
   const handleView = () => {
-    console.log('View request:', selectedRequest);
+    if (selectedRequest) {
+      router.push(`/requests/${selectedRequest}`);
+    }
     handleMenuClose();
   };
 
   const handleEdit = () => {
-    console.log('Edit request:', selectedRequest);
+    if (selectedRequest) {
+      router.push(`/requests/${selectedRequest}`);
+    }
     handleMenuClose();
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (selectedRequest) {
-      setRequests(requests.filter(req => req.id !== selectedRequest));
-      setSnackbar({
-        open: true,
-        message: 'ลบรายการขอเบิกเรียบร้อยแล้ว',
-        severity: 'info',
-      });
+      try {
+        await requestService.deleteRequest(selectedRequest);
+        setRequests(requests.filter(req => req.requestId !== selectedRequest));
+        setSnackbar({
+          open: true,
+          message: 'ลบรายการขอเบิกเรียบร้อยแล้ว',
+          severity: 'success',
+        });
+      } catch (error) {
+        console.error('Error deleting request:', error);
+        setSnackbar({
+          open: true,
+          message: 'ไม่สามารถลบรายการขอเบิกได้',
+          severity: 'error',
+        });
+      }
     }
     handleMenuClose();
   };
@@ -148,21 +113,22 @@ export default function RequestsPage() {
 
   const columns: Column[] = [
     {
-      id: 'id',
-      label: 'รหัส',
+      id: 'requestCode',
+      label: 'รหัสคำขอ',
       align: 'center',
-      minWidth: 80,
-      format: (value) => `#${value}`,
+      minWidth: 120,
     },
     {
       id: 'assetName',
-      label: 'ชื่อ Asset',
+      label: 'ชื่อสินทรัพย์',
+      align: 'left',
       minWidth: 200,
     },
     {
-      id: 'requesterName',
-      label: 'ชื่อผู้เบิก',
-      minWidth: 150,
+      id: 'departmentName',
+      label: 'แผนก',
+      align: 'left',
+      minWidth: 180,
     },
     {
       id: 'quantity',
@@ -173,15 +139,10 @@ export default function RequestsPage() {
     },
     {
       id: 'requestDate',
-      label: 'วันที่ต้องการเบิก',
+      label: 'วันที่ขอเบิก',
       align: 'center',
       minWidth: 140,
       format: (value) => new Date(value).toLocaleDateString('th-TH'),
-    },
-    {
-      id: 'approver',
-      label: 'ผู้อนุมัติ',
-      minWidth: 180,
     },
     {
       id: 'status',
@@ -190,25 +151,27 @@ export default function RequestsPage() {
       minWidth: 120,
       format: (value) => {
         const statusMap = {
-          pending: 'Pending' as const,
-          approved: 'Approved' as const,
-          rejected: 'Rejected' as const,
+          PENDING: 'Pending' as const,
+          APPROVED: 'Approved' as const,
+          REJECTED: 'Rejected' as const,
+          FULFILLED: 'Approved' as const,
         };
         const statusLabels = {
-          pending: 'รออนุมัติ',
-          approved: 'อนุมัติแล้ว',
-          rejected: 'ไม่อนุมัติ',
+          PENDING: 'รออนุมัติ',
+          APPROVED: 'อนุมัติแล้ว',
+          REJECTED: 'ไม่อนุมัติ',
+          FULFILLED: 'เบิกแล้ว',
         };
         const statusValue = statusMap[value as keyof typeof statusMap];
         return <StatusBadge status={statusValue} label={statusLabels[value as keyof typeof statusLabels]} />;
       },
     },
     {
-      id: 'createdAt',
-      label: 'วันที่สร้าง',
+      id: 'approvalDate',
+      label: 'วันที่อนุมัติ',
       align: 'center',
-      minWidth: 120,
-      format: (value) => new Date(value).toLocaleDateString('th-TH'),
+      minWidth: 140,
+      format: (value) => value ? new Date(value).toLocaleDateString('th-TH') : '-',
     },
   ];
 
@@ -264,21 +227,21 @@ export default function RequestsPage() {
 
       {/** Table */}
       <Paper elevation={0} sx={{ borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
-        <DataTable
-          columns={columns}
-          rows={requests}
-          page={0}
-          rowsPerPage={10}
-          totalRows={requests.length}
-          emptyMessage="ไม่มีรายการขอเบิก"
-        />
+        {loading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
+            <CircularProgress />
+          </Box>
+        ) : (
+          <DataTable
+            columns={columns}
+            rows={requests}
+            page={0}
+            rowsPerPage={10}
+            totalRows={requests.length}
+            emptyMessage="ไม่มีรายการขอเบิก"
+          />
+        )}
       </Paper>
-
-      <RequestModal
-        open={openModal}
-        onClose={handleCloseModal}
-        onSubmit={handleSubmit}
-      />
 
       <Menu
         anchorEl={anchorEl}

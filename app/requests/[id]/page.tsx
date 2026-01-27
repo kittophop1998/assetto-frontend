@@ -22,7 +22,6 @@ import { useEffect, useState } from "react";
 import {
     ArrowBack as ArrowBackIcon,
     Inventory as InventoryIcon,
-    Person as PersonIcon,
     Numbers as NumbersIcon,
     CalendarMonth as CalendarIcon,
     CheckCircle as CheckCircleIcon,
@@ -31,15 +30,14 @@ import {
 import { Select } from "@mui/material";
 import { Asset, getAssets } from "@/src/services/assetService";
 import { getDepartment, Department } from "@/src/services/masterService";
+import { requestService, CreateRequestData } from "@/src/services/requestService";
 
 interface FormData {
     assetId: string;
-    assetName: string;
-    requesterName: string;
-    department: string;
-    quantity: number;
-    requestDate: string;
-    approver: string;
+    departmentId: string;
+    requestAmount: number;
+    dateRequest: string;
+    approvedBy: string;
 }
 
 const approvers = [
@@ -62,12 +60,10 @@ export default function RequestFormPage() {
 
     const [formData, setFormData] = useState<FormData>({
         assetId: '',
-        assetName: '',
-        requesterName: '',
-        department: '',
-        quantity: 1,
-        requestDate: new Date().toISOString().split('T')[0],
-        approver: '',
+        departmentId: '',
+        requestAmount: 1,
+        dateRequest: new Date().toISOString().split('T')[0],
+        approvedBy: '',
     });
 
     const [snackbar, setSnackbar] = useState({
@@ -80,55 +76,61 @@ export default function RequestFormPage() {
         const { name, value } = e.target;
         setFormData((prev) => ({
             ...prev,
-            [name]: name === 'quantity' ? parseInt(value) || 1 : value,
+            [name]: name === 'requestAmount' ? parseInt(value) || 1 : value,
         }));
     };
 
     const handleSelectChange = (e: SelectChangeEvent) => {
         const { name, value } = e.target;
-
-        // ถ้าเป็นการเลือก asset ให้เก็บทั้ง id และ name
-        if (name === 'assetId') {
-            const selectedAsset = assets.find(asset => asset.id === value);
-            setFormData((prev) => ({
-                ...prev,
-                assetId: value,
-                assetName: selectedAsset?.name || '',
-            }));
-        } else {
-            setFormData((prev) => ({
-                ...prev,
-                [name]: value,
-            }));
-        }
+        setFormData((prev) => ({
+            ...prev,
+            [name]: value,
+        }));
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!formData.assetId || !formData.requesterName || !formData.department ||
-            !formData.quantity || !formData.requestDate || !formData.approver) {
+        if (!formData.assetId || !formData.departmentId ||
+            !formData.requestAmount || !formData.dateRequest || !formData.approvedBy) {
             setSnackbar({
                 open: true,
                 message: 'กรุณากรอกข้อมูลให้ครบถ้วน',
                 severity: 'error',
             });
-            
             return;
         }
 
-        // TODO: ส่งข้อมูลไปยัง API
-        console.log('Submit form data:', formData);
+        try {
+            const requestData: CreateRequestData = {
+                assetId: formData.assetId,
+                departmentId: formData.departmentId,
+                requestAmount: formData.requestAmount,
+                dateRequest: formData.dateRequest,
+                approvedBy: formData.approvedBy,
+            };
 
-        setSnackbar({
-            open: true,
-            message: isEdit ? 'อัปเดตรายการเรียบร้อยแล้ว' : 'บันทึกรายการขอเบิกเรียบร้อยแล้ว',
-            severity: 'success',
-        });
+            const response = await requestService.createRequest(requestData);
 
-        setTimeout(() => {
-            router.push('/requests');
-        }, 1500);
+            if (response.success) {
+                setSnackbar({
+                    open: true,
+                    message: isEdit ? 'อัปเดตรายการเรียบร้อยแล้ว' : 'บันทึกรายการขอเบิกเรียบร้อยแล้ว',
+                    severity: 'success',
+                });
+
+                setTimeout(() => {
+                    router.push('/requests');
+                }, 1500);
+            }
+        } catch (error) {
+            console.error('Error submitting request:', error);
+            setSnackbar({
+                open: true,
+                message: 'ไม่สามารถบันทึกรายการขอเบิกได้',
+                severity: 'error',
+            });
+        }
     };
 
     const handleCancel = () => {
@@ -253,11 +255,11 @@ export default function RequestFormPage() {
                                                             <Typography
                                                                 variant="caption"
                                                                 sx={{
-                                                                    color: asset.availableQuantity > 5 ? 'success.main' : 'warning.main',
+                                                                    color: (asset.availableQuantity || 0) > 5 ? 'success.main' : 'warning.main',
                                                                     fontWeight: 600,
                                                                 }}
                                                             >
-                                                                คงเหลือ: {asset.availableQuantity}
+                                                                คงเหลือ: {asset.availableQuantity || 0}
                                                             </Typography>
                                                         </Stack>
                                                     </MenuItem>
@@ -266,27 +268,12 @@ export default function RequestFormPage() {
                                         </Select>
                                     </FormControl>
 
-                                    {/* Requester Name */}
-                                    <TextField
-                                        fullWidth
-                                        required
-                                        size="small"
-                                        name="requesterName"
-                                        label="ชื่อผู้เบิกอุปกรณ์"
-                                        placeholder="กรอกชื่อ-นามสกุล ของท่าน"
-                                        value={formData.requesterName}
-                                        onChange={handleInputChange}
-                                        InputProps={{
-                                            startAdornment: <PersonIcon sx={{ mr: 1, color: 'text.secondary' }} />,
-                                        }}
-                                    />
-
                                     {/* Department */}
                                     <FormControl fullWidth required size="small">
                                         <InputLabel>แผนก</InputLabel>
                                         <Select
-                                            name="department"
-                                            value={formData.department}
+                                            name="departmentId"
+                                            value={formData.departmentId}
                                             onChange={handleSelectChange}
                                             label="แผนก"
                                             startAdornment={<BusinessIcon sx={{ mr: 1, color: 'text.secondary' }} />}
@@ -298,7 +285,7 @@ export default function RequestFormPage() {
                                                 <MenuItem disabled>ไม่มีข้อมูล Department</MenuItem>
                                             ) : (
                                                 departments.map((dept) => (
-                                                    <MenuItem key={dept.id} value={dept.name}>
+                                                    <MenuItem key={dept.id} value={dept.id}>
                                                         {dept.name}
                                                     </MenuItem>
                                                 ))
@@ -312,9 +299,9 @@ export default function RequestFormPage() {
                                         required
                                         size="small"
                                         type="number"
-                                        name="quantity"
+                                        name="requestAmount"
                                         label="จำนวน (หน่วย)"
-                                        value={formData.quantity}
+                                        value={formData.requestAmount}
                                         onChange={handleInputChange}
                                         inputProps={{ min: 1 }}
                                         InputProps={{
@@ -328,9 +315,9 @@ export default function RequestFormPage() {
                                         required
                                         size="small"
                                         type="date"
-                                        name="requestDate"
+                                        name="dateRequest"
                                         label="วันที่ต้องการเบิก"
-                                        value={formData.requestDate}
+                                        value={formData.dateRequest}
                                         onChange={handleInputChange}
                                         InputLabelProps={{ shrink: true }}
                                         InputProps={{
@@ -340,16 +327,16 @@ export default function RequestFormPage() {
 
                                     {/* Approver */}
                                     <FormControl fullWidth required size="small">
-                                        <InputLabel>ผู้อนุมัติ</InputLabel>
+                                        <InputLabel>ผู้อนุมัติ (User ID)</InputLabel>
                                         <Select
-                                            name="approver"
-                                            value={formData.approver}
+                                            name="approvedBy"
+                                            value={formData.approvedBy}
                                             onChange={handleSelectChange}
-                                            label="ผู้อนุมัติ"
+                                            label="ผู้อนุมัติ (User ID)"
                                             startAdornment={<CheckCircleIcon sx={{ mr: 1, color: 'text.secondary' }} />}
                                         >
                                             {approvers.map((approver) => (
-                                                <MenuItem key={approver.id} value={approver.name}>
+                                                <MenuItem key={approver.id} value={approver.id.toString()}>
                                                     {approver.name}
                                                 </MenuItem>
                                             ))}

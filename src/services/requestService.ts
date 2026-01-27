@@ -1,133 +1,62 @@
 import axiosInstance from "../utils/axios";
 
-export type RequestType = 'Backoffice' | 'Branch';
-export type RequestStatus = 'Draft' | 'Pending' | 'Approved' | 'Rejected' | 'Reviewed';
-
-export interface RequestItem {
-  assetId: string;
-  assetCode?: string;
-  assetName?: string;
-  availableQuantity?: number;
-  requestedQuantity: number;
-  approvedQuantity?: number;
-  unit?: string;
-  remark?: string;
-}
+export type RequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'FULFILLED';
 
 export interface AssetRequest {
-  id: string;
-  requestNo: string;
-  requestDate: string;
-  requestType: RequestType;
-  departmentId: string;
-  departmentName?: string;
-  branchName?: string;
-  requesterId: string;
-  requesterName?: string;
-  purpose: string;
+  requestId: number;
+  requestCode: string;
+  assetName: string;
+  departmentName: string;
+  quantity: number;
   status: RequestStatus;
-  items: RequestItem[];
-  approver?: {
-    id: string;
-    name: string;
-    approvedDate: string;
-    comment?: string;
-  };
-  reviewer?: {
-    id: string;
-    name: string;
-    reviewedDate: string;
-    note?: string;
-  };
-  createdAt?: string;
-  updatedAt?: string;
+  requestDate: string;
+  approvalDate: string | null;
+  fulfillmentDate: string | null;
 }
 
 export interface CreateRequestData {
-  requestType: RequestType;
+  assetId: string;
   departmentId: string;
-  branchName?: string;
-  purpose: string;
-  items: RequestItem[];
+  requestAmount: number;
+  dateRequest: string;
+  approvedBy: string;
 }
 
-export interface RequestListParams {
-  page?: number;
-  limit?: number;
-  status?: RequestStatus;
-  department?: string;
-  branch?: string;
-  startDate?: string;
-  endDate?: string;
-  type?: 'my' | 'all';
+export interface ApiResponse<T> {
+  success: boolean;
+  message: string;
+  data: T;
+  timestamp: string;
 }
 
 export const requestService = {
-  // Get all requests (for approver/reviewer)
-  getRequests: async (params: RequestListParams = {}) => {
-    const response = await axiosInstance.get('/requests', { params });
-    return response.data;
-  },
-
-  // Get my requests
-  getMyRequests: async (params: RequestListParams = {}) => {
-    const response = await axiosInstance.get('/requests/my', { params });
+  // Get all asset requests
+  getRequests: async (): Promise<ApiResponse<AssetRequest[]>> => {
+    const response = await axiosInstance.get('/asset-requests');
     return response.data;
   },
 
   // Get request by ID
-  getRequestById: async (id: string): Promise<AssetRequest> => {
-    const response = await axiosInstance.get(`/requests/${id}`);
+  getRequestById: async (id: number): Promise<ApiResponse<AssetRequest>> => {
+    const response = await axiosInstance.get(`/asset-requests/${id}`);
     return response.data;
   },
 
   // Create new request
-  createRequest: async (data: CreateRequestData): Promise<AssetRequest> => {
-    const response = await axiosInstance.post('/requests', data);
+  createRequest: async (data: CreateRequestData): Promise<ApiResponse<string>> => {
+    const response = await axiosInstance.post('/asset-requests', data);
     return response.data;
   },
 
-  // Update request (draft only)
-  updateRequest: async (id: string, data: Partial<CreateRequestData>): Promise<AssetRequest> => {
-    const response = await axiosInstance.put(`/requests/${id}`, data);
+  // Update request
+  updateRequest: async (id: number, data: Partial<CreateRequestData>): Promise<ApiResponse<string>> => {
+    const response = await axiosInstance.put(`/asset-requests/${id}`, data);
     return response.data;
   },
 
-  // Submit request for approval
-  submitRequest: async (id: string): Promise<AssetRequest> => {
-    const response = await axiosInstance.post(`/requests/${id}/submit`);
-    return response.data;
-  },
-
-  // Cancel request
-  cancelRequest: async (id: string): Promise<void> => {
-    await axiosInstance.post(`/requests/${id}/cancel`);
-  },
-
-  // Approve request
-  approveRequest: async (id: string, data: { approvedQuantities: { [key: string]: number }; comment?: string }) => {
-    const response = await axiosInstance.post(`/requests/${id}/approve`, data);
-    return response.data;
-  },
-
-  // Reject request
-  rejectRequest: async (id: string, comment: string) => {
-    const response = await axiosInstance.post(`/requests/${id}/reject`, { comment });
-    return response.data;
-  },
-
-  // Review request
-  reviewRequest: async (id: string, note?: string) => {
-    const response = await axiosInstance.post(`/requests/${id}/review`, { note });
-    return response.data;
-  },
-
-  // Export requests to Excel
-  exportRequests: async (params: RequestListParams = {}) => {
-    const response = await axiosInstance.get('/requests/export', {
-      params,
-      responseType: 'blob',
-    });
+  // Delete request
+  deleteRequest: async (id: number): Promise<ApiResponse<string>> => {
+    const response = await axiosInstance.delete(`/asset-requests/${id}`);
     return response.data;
   },
 };
