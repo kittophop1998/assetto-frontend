@@ -30,23 +30,22 @@ import {
   HourglassEmpty as HourglassEmptyIcon,
 } from '@mui/icons-material';
 import { getDashboardData } from '@/src/services/dashboardService';
-import StatusBadge from '@/src/components/common/StatusBadge';
 
 interface DashboardItem {
-  requestId: number;
-  requestCode: string;
-  departmentName: string;
+  assetName: string;
   serialNumber: string;
-  status: string;
+  departmentName: string;
+  userName: string;
+  assignedDate: string;
+  returnedDate: string | null;
 }
 
 interface DepartmentAssets {
   departmentName: string;
   assets: DashboardItem[];
   totalAssets: number;
-  approvedCount: number;
-  pendingCount: number;
-  rejectedCount: number;
+  assignedCount: number;
+  returnedCount: number;
 }
 
 export default function DashboardPage() {
@@ -73,9 +72,8 @@ export default function DashboardPage() {
         departmentName: deptName,
         assets: assets,
         totalAssets: assets.length,
-        approvedCount: assets.filter((a) => a.status === 'APPROVED').length,
-        pendingCount: assets.filter((a) => a.status === 'PENDING').length,
-        rejectedCount: assets.filter((a) => a.status === 'REJECTED').length,
+        assignedCount: assets.filter((a) => a.assignedDate && !a.returnedDate).length,
+        returnedCount: assets.filter((a) => a.returnedDate).length,
       };
     });
 
@@ -108,20 +106,21 @@ export default function DashboardPage() {
     setExpandedPanel(isExpanded ? panel : false);
   };
 
-  const getStatusBadge = (status: string) => {
-    const statusMap: Record<string, 'Approved' | 'Pending' | 'Rejected'> = {
-      APPROVED: 'Approved',
-      PENDING: 'Pending',
-      REJECTED: 'Rejected',
-    };
-    return <StatusBadge status={statusMap[status] || 'Pending'} />;
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return '-';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('th-TH', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
   };
 
   // Calculate summary statistics
   const totalAssets = dashboardData.length;
   const totalDepartments = departmentGroups.length;
-  const totalApproved = dashboardData.filter((d) => d.status === 'APPROVED').length;
-  const totalPending = dashboardData.filter((d) => d.status === 'PENDING').length;
+  const totalAssigned = dashboardData.filter((d) => d.assignedDate && !d.returnedDate).length;
+  const totalReturned = dashboardData.filter((d) => d.returnedDate).length;
 
   return (
     <MainLayout title={t('menu.dashboard')}>
@@ -173,9 +172,9 @@ export default function DashboardPage() {
                 <CheckCircleIcon sx={{ fontSize: 40 }} />
                 <Box>
                   <Typography variant="h4" fontWeight={700}>
-                    {totalApproved}
+                    {totalAssigned}
                   </Typography>
-                  <Typography variant="body2">{t('dashboard.approved')}</Typography>
+                  <Typography variant="body2">{t('dashboard.assigned')}</Typography>
                 </Box>
               </Box>
             </CardContent>
@@ -187,9 +186,9 @@ export default function DashboardPage() {
                 <HourglassEmptyIcon sx={{ fontSize: 40 }} />
                 <Box>
                   <Typography variant="h4" fontWeight={700}>
-                    {totalPending}
+                    {totalReturned}
                   </Typography>
-                  <Typography variant="body2">{t('dashboard.pending')}</Typography>
+                  <Typography variant="body2">{t('dashboard.returned')}</Typography>
                 </Box>
               </Box>
             </CardContent>
@@ -244,24 +243,16 @@ export default function DashboardPage() {
                             sx={{ fontWeight: 600 }}
                           />
                           <Chip
-                            label={`${t('dashboard.approved')}: ${dept.approvedCount}`}
+                            label={`${t('dashboard.assigned')}: ${dept.assignedCount}`}
                             size="small"
                             color="success"
                             sx={{ fontWeight: 600 }}
                           />
-                          {dept.pendingCount > 0 && (
+                          {dept.returnedCount > 0 && (
                             <Chip
-                              label={`${t('dashboard.pending')}: ${dept.pendingCount}`}
+                              label={`${t('dashboard.returned')}: ${dept.returnedCount}`}
                               size="small"
-                              color="warning"
-                              sx={{ fontWeight: 600 }}
-                            />
-                          )}
-                          {dept.rejectedCount > 0 && (
-                            <Chip
-                              label={`${t('dashboard.rejected')}: ${dept.rejectedCount}`}
-                              size="small"
-                              color="error"
+                              color="info"
                               sx={{ fontWeight: 600 }}
                             />
                           )}
@@ -273,23 +264,44 @@ export default function DashboardPage() {
                         <Table size="small">
                           <TableHead>
                             <TableRow sx={{ bgcolor: 'grey.50' }}>
-                              <TableCell sx={{ fontWeight: 600 }}>{t('dashboard.requestCode')}</TableCell>
+                              <TableCell sx={{ fontWeight: 600 }}>{t('dashboard.assetName')}</TableCell>
                               <TableCell sx={{ fontWeight: 600 }}>{t('dashboard.serialNumber')}</TableCell>
+                              <TableCell sx={{ fontWeight: 600 }}>{t('dashboard.userName')}</TableCell>
                               <TableCell sx={{ fontWeight: 600 }} align="center">
-                                {t('dashboard.status')}
+                                {t('dashboard.assignedDate')}
+                              </TableCell>
+                              <TableCell sx={{ fontWeight: 600 }} align="center">
+                                {t('dashboard.returnedDate')}
                               </TableCell>
                             </TableRow>
                           </TableHead>
                           <TableBody>
-                            {dept.assets.map((asset) => (
-                              <TableRow key={asset.requestId} hover>
-                                <TableCell>{asset.requestCode}</TableCell>
+                            {dept.assets.map((asset, idx) => (
+                              <TableRow key={`${asset.serialNumber}-${idx}`} hover>
+                                <TableCell>
+                                  <Typography variant="body2" fontWeight={500}>
+                                    {asset.assetName}
+                                  </Typography>
+                                </TableCell>
                                 <TableCell>
                                   <Typography variant="body2" fontWeight={500} color="primary">
                                     {asset.serialNumber}
                                   </Typography>
                                 </TableCell>
-                                <TableCell align="center">{getStatusBadge(asset.status)}</TableCell>
+                                <TableCell>{asset.userName}</TableCell>
+                                <TableCell align="center">{formatDate(asset.assignedDate)}</TableCell>
+                                <TableCell align="center">
+                                  {asset.returnedDate ? (
+                                    <Chip
+                                      label={formatDate(asset.returnedDate)}
+                                      size="small"
+                                      color="info"
+                                      variant="outlined"
+                                    />
+                                  ) : (
+                                    <Chip label={t('dashboard.inUse')} size="small" color="success" />
+                                  )}
+                                </TableCell>
                               </TableRow>
                             ))}
                           </TableBody>

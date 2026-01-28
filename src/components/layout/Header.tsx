@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   AppBar,
   Toolbar,
@@ -8,7 +8,6 @@ import {
   Box,
   IconButton,
   InputBase,
-  Badge,
   Avatar,
   Menu,
   MenuItem,
@@ -19,7 +18,6 @@ import {
 } from '@mui/material';
 import {
   Search as SearchIcon,
-  Notifications as NotificationsIcon,
   AccountCircle,
   Settings as SettingsIcon,
   Logout as LogoutIcon,
@@ -34,16 +32,24 @@ interface HeaderProps {
   onSidebarToggle?: () => void;
 }
 
+interface User {
+  name?: string;
+  role?: string;
+  department?: string;
+}
+
 export default function Header({ title, onMenuClick, onSidebarToggle }: HeaderProps) {
   const { t, i18n } = useTranslation('common');
   const router = useRouter();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [user] = useState(() => {
+  const [user, setUser] = useState<User | null>(() => {
     if (typeof window !== 'undefined') {
       const userData = localStorage.getItem('user');
-      return userData ? JSON.parse(userData) : null;
+      if (userData) {
+        return JSON.parse(userData);
+      }
     }
     return null;
   });
@@ -144,13 +150,6 @@ export default function Header({ title, onMenuClick, onSidebarToggle }: HeaderPr
               }}
             />
           </Box>
-
-          {/* Notifications */}
-          <IconButton size="medium" sx={{ color: 'grey.600' }}>
-            <Badge badgeContent={4} color="error">
-              <NotificationsIcon />
-            </Badge>
-          </IconButton>
 
           {/* User Menu */}
           <Box

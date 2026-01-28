@@ -92,7 +92,6 @@ export default function Sidebar({ open: externalOpen, mobileOpen = false, onTogg
 
   const handleNavigate = (path: string) => {
     router.push(path);
-    // ปิด mobile drawer หลังจากคลิกเมนู
     if (isMobile && onMobileToggle) {
       onMobileToggle();
     }
@@ -186,7 +185,7 @@ export default function Sidebar({ open: externalOpen, mobileOpen = false, onTogg
       </List>
 
       {/* Toggle Button - แสดงเฉพาะบน desktop */}
-      {!isMobile && (
+      {/* {!isMobile && (
         <>
           <Divider />
           <Box sx={{ p: 2, display: 'flex', justifyContent: 'center' }}>
@@ -203,7 +202,7 @@ export default function Sidebar({ open: externalOpen, mobileOpen = false, onTogg
             </IconButton>
           </Box>
         </>
-      )}
+      )} */}
     </>
   );
 
@@ -215,7 +214,7 @@ export default function Sidebar({ open: externalOpen, mobileOpen = false, onTogg
         open={mobileOpen}
         onClose={onMobileToggle}
         ModalProps={{
-          keepMounted: true, // Better open performance on mobile
+          keepMounted: true,
         }}
         sx={{
           display: { xs: 'block', md: 'none' },
