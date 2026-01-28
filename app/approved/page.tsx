@@ -14,7 +14,6 @@ import {
   Alert,
   Snackbar,
   CircularProgress,
-  Chip,
 } from '@mui/material';
 import {
   CheckCircle as CheckCircleIcon,
@@ -70,14 +69,15 @@ export default function ApprovedPage() {
     setApproveModalOpen(true);
   };
 
-  const handleApproveSubmit = async (serialNumbers: string[]) => {
+  const handleApproveSubmit = async () => {
     if (!selectedRequest) return;
 
     try {
       setSubmitting(true);
       const response = await requestService.approveRequest(
         selectedRequest.requestCode,
-        { serialNumbers }
+        { serialNumbers: [] },
+        selectedRequest.requestType // ส่ง type จาก request ที่เลือก
       );
 
       if (response.success) {
@@ -88,7 +88,7 @@ export default function ApprovedPage() {
         });
         setApproveModalOpen(false);
         setSelectedRequest(null);
-        loadRequests(); // Reload the list
+        loadRequests();
       }
     } catch (error) {
       console.error('Error approving request:', error);
@@ -146,23 +146,19 @@ export default function ApprovedPage() {
       minWidth: 200,
     },
     {
+      id: 'serialNumber',
+      label: t('asset.serialNumber'),
+      minWidth: 150,
+    },
+    {
       id: 'departmentName',
       label: t('asset.department'),
       minWidth: 150,
     },
     {
-      id: 'quantity',
-      label: t('asset.quantity'),
-      align: 'center',
-      minWidth: 100,
-      format: (value) => (
-        <Chip 
-          label={value} 
-          size="small" 
-          color="primary" 
-          sx={{ fontWeight: 600 }}
-        />
-      ),
+      id: 'requestType',
+      label: t('request.requestType'),
+      minWidth: 150,
     },
     {
       id: 'requestDate',
@@ -191,15 +187,6 @@ export default function ApprovedPage() {
       minWidth: 200,
       format: (_value, row: AssetRequest) => (
         <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
-          <Tooltip title={t('common.view')}>
-            <IconButton
-              size="small"
-              color="info"
-              onClick={() => handleView(row.requestId)}
-            >
-              <VisibilityIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
           <Tooltip title={t('approve.approve')}>
             <IconButton
               size="small"

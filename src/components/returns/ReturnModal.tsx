@@ -1,86 +1,66 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
   Button,
-  TextField,
   Box,
-  MenuItem,
   Typography,
   Alert,
-  CircularProgress,
+  IconButton,
 } from '@mui/material';
+import {
+  Close as CloseIcon,
+  Warning as WarningIcon,
+} from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
-import { createAssetReturn } from '@/src/services/returnService';
-import { requestService, AssetRequest } from '@/src/services/requestService';
+import { requestService, CreateReturnData } from '@/src/services/requestService';
 
 interface ReturnModalProps {
   open: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  preSelectedSerialNumber?: string;
+  preSelectedDepartmentId?: number;
+  assetName?: string;
 }
 
 export default function ReturnModal({
   open,
   onClose,
   onSuccess,
+  preSelectedSerialNumber,
+  preSelectedDepartmentId,
+  assetName,
 }: ReturnModalProps) {
   const { t } = useTranslation('common');
   const [loading, setLoading] = useState(false);
-  const [loadingRequests, setLoadingRequests] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [assetRequests, setAssetRequests] = useState<AssetRequest[]>([]);
-  const [formData, setFormData] = useState({
-    assetRequestCode: '',
-    notes: '',
-  });
 
-  useEffect(() => {
-    if (open) {
-      loadAssetRequests();
-    }
-  }, [open]);
-
-  const loadAssetRequests = async () => {
-    try {
-      setLoadingRequests(true);
-      const response = await requestService.getRequests();
-      if (response.success) {
-        const returnableRequests = response.data.filter(
-          (req) => req.status === 'APPROVED' || req.status === 'FULFILLED'
-        );
-        setAssetRequests(returnableRequests);
-      }
-    } catch (err) {
-      console.error('Error loading asset requests:', err);
-      setError('ไม่สามารถโหลดรายการคำขอยืมได้');
-    } finally {
-      setLoadingRequests(false);
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
     setError(null);
 
-    if (!formData.assetRequestCode) {
-      setError('กรุณาเลือกคำขอยืมทรัพย์สิน');
+    if (!preSelectedSerialNumber || !preSelectedDepartmentId) {
+      setError('ข้อมูลไม่ครบถ้วน');
       return;
     }
 
     setLoading(true);
 
     try {
-      await createAssetReturn({
-        assetRequestCode: formData.assetRequestCode,
-        notes: formData.notes || undefined,
-      });
-      handleClose();
-      onSuccess();
+      const returnData: CreateReturnData = {
+        serialNumber: preSelectedSerialNumber,
+        departmentId: preSelectedDepartmentId.toString(),
+      };
+      
+      const response = await requestService.createReturn(returnData);
+      if (response.success) {
+        handleClose();
+        onSuccess();
+      }
     } catch (err: unknown) {
       if (err instanceof Error) {
         setError(err.message || 'เกิดข้อผิดพลาดในการสร้างคำขอคืนทรัพย์สิน');
@@ -94,10 +74,6 @@ export default function ReturnModal({
 
   const handleClose = () => {
     if (!loading) {
-      setFormData({
-        assetRequestCode: '',
-        notes: '',
-      });
       setError(null);
       onClose();
     }
@@ -111,104 +87,127 @@ export default function ReturnModal({
       fullWidth
       PaperProps={{
         sx: {
-          borderRadius: 2,
+          borderRadius: 3,
         },
       }}
     >
-      <form onSubmit={handleSubmit}>
-        <DialogTitle sx={{ pb: 1 }}>
+      <DialogTitle
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          pb: 2,
+        }}
+      >
+        <Box>
           <Typography variant="h6" component="div" fontWeight={600}>
-            สร้างคำขอคืนทรัพย์สิน
+            ยืนยันการคืนทรัพย์สิน
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-            กรุณากรอกข้อมูลเพื่อสร้างคำขอคืนทรัพย์สิน
+            กรุณาตรวจสอบข้อมูลก่อนยืนยัน
           </Typography>
-        </DialogTitle>
+        </Box>
+        <IconButton onClick={handleClose} size="small" disabled={loading}>
+          <CloseIcon />
+        </IconButton>
+      </DialogTitle>
 
-        <DialogContent>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, pt: 2 }}>
-            {error && (
-              <Alert severity="error" onClose={() => setError(null)}>
-                {error}
-              </Alert>
-            )}
+      <DialogContent dividers sx={{ py: 3 }}>
+        {error && (
+          <Alert severity="error" onClose={() => setError(null)} sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
 
-            <TextField
-              select
-              required
-              fullWidth
-              label="คำขอยืมทรัพย์สิน"
-              value={formData.assetRequestCode}
-              onChange={(e) =>
-                setFormData({ ...formData, assetRequestCode: e.target.value })
-              }
-              disabled={loading || loadingRequests}
-              helperText="เลือกคำขอยืมทรัพย์สินที่ต้องการคืน"
-            >
-              {loadingRequests ? (
-                <MenuItem disabled>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <CircularProgress size={20} />
-                    <Typography variant="body2">กำลังโหลดข้อมูล...</Typography>
-                  </Box>
-                </MenuItem>
-              ) : assetRequests.length === 0 ? (
-                <MenuItem disabled>
-                  <Typography variant="body2" color="text.secondary">
-                    ไม่มีคำขอยืมที่สามารถคืนได้
-                  </Typography>
-                </MenuItem>
-              ) : (
-                assetRequests.map((request) => (
-                  <MenuItem key={request.requestId} value={request.requestCode}>
-                    <Box>
-                      <Typography variant="body2" fontWeight={500}>
-                        {request.requestCode}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {request.assetName} - {request.departmentName} ({request.quantity} หน่วย)
-                      </Typography>
-                    </Box>
-                  </MenuItem>
-                ))
-              )}
-            </TextField>
-
-            <TextField
-              fullWidth
-              multiline
-              rows={4}
-              label="หมายเหตุ"
-              value={formData.notes}
-              onChange={(e) =>
-                setFormData({ ...formData, notes: e.target.value })
-              }
-              disabled={loading}
-              placeholder="ระบุหมายเหตุหรือรายละเอียดเพิ่มเติม (ถ้ามี)"
-              helperText="ข้อมูลนี้ไม่จำเป็น สามารถเว้นว่างได้"
-            />
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 2,
+            py: 2,
+          }}
+        >
+          <Box
+            sx={{
+              bgcolor: 'warning.lighter',
+              borderRadius: '50%',
+              width: 64,
+              height: 64,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <WarningIcon sx={{ fontSize: 40, color: 'warning.main' }} />
           </Box>
-        </DialogContent>
 
-        <DialogActions sx={{ px: 3, pb: 3, gap: 1 }}>
-          <Button
-            onClick={handleClose}
-            disabled={loading}
-            variant="outlined"
-            sx={{ minWidth: 100 }}
+          <Typography variant="h6" fontWeight={600} textAlign="center">
+            คุณต้องการคืนทรัพย์สินนี้หรือไม่?
+          </Typography>
+
+          <Box
+            sx={{
+              width: '100%',
+              bgcolor: 'background.default',
+              borderRadius: 2,
+              p: 2.5,
+              mt: 1,
+            }}
           >
-            {t('common.cancel')}
-          </Button>
-          <Button
-            type="submit"
-            variant="contained"
-            disabled={loading}
-            sx={{ minWidth: 100 }}
-          >
-            {loading ? 'กำลังบันทึก...' : 'สร้างคำขอคืน'}
-          </Button>
-        </DialogActions>
-      </form>
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="caption" color="text.secondary" display="block">
+                ชื่อทรัพย์สิน
+              </Typography>
+              <Typography variant="body1" fontWeight={600}>
+                {assetName || '-'}
+              </Typography>
+            </Box>
+
+            <Box>
+              <Typography variant="caption" color="text.secondary" display="block">
+                Serial Number
+              </Typography>
+              <Typography
+                variant="body1"
+                fontWeight={600}
+                sx={{ fontFamily: 'monospace' }}
+              >
+                {preSelectedSerialNumber || '-'}
+              </Typography>
+            </Box>
+          </Box>
+
+          <Alert severity="info" sx={{ width: '100%', mt: 1 }}>
+            เมื่อยืนยันแล้ว ระบบจะทำการสร้างคำขอคืนทรัพย์สิน
+          </Alert>
+        </Box>
+      </DialogContent>
+
+      <DialogActions sx={{ px: 3, py: 2 }}>
+        <Button
+          onClick={handleClose}
+          disabled={loading}
+          variant="outlined"
+          sx={{ minWidth: 100, borderRadius: 2 }}
+        >
+          {t('common.cancel')}
+        </Button>
+        <Button
+          onClick={handleSubmit}
+          variant="contained"
+          color="warning"
+          disabled={loading}
+          sx={{
+            minWidth: 100,
+            borderRadius: 2,
+            boxShadow: 2,
+            '&:hover': { boxShadow: 4 },
+          }}
+        >
+          {loading ? 'กำลังดำเนินการ...' : 'ยืนยันคืนทรัพย์สิน'}
+        </Button>
+      </DialogActions>
     </Dialog>
   );
 }

@@ -69,6 +69,11 @@ export default function Sidebar({ open: externalOpen, mobileOpen = false, onTogg
       path: '/assets',
     },
     {
+      name: t('menu.myAsset'),
+      icon: <AssignmentIcon />,
+      path: '/my_assets',
+    },
+    {
       name: t('menu.assetRequest'),
       icon: <AssignmentIcon />,
       path: '/requests',
@@ -78,21 +83,11 @@ export default function Sidebar({ open: externalOpen, mobileOpen = false, onTogg
       icon: <AssignmentIcon />,
       path: '/approved',
     },
-    {
-      name: t('menu.assetReturns'),
-      icon: <AssignmentIcon />,
-      path: '/returns',
-    },
-    {
-      name: t('menu.users'),
-      icon: <PeopleIcon />,
-      path: '/users',
-    },
-    {
-      name: t('menu.settings'),
-      icon: <SettingsIcon />,
-      path: '/settings',
-    },
+    // {
+    //   name: t('menu.users'),
+    //   icon: <PeopleIcon />,
+    //   path: '/users',
+    // },
   ];
 
   const handleNavigate = (path: string) => {

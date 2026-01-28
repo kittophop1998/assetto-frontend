@@ -126,7 +126,7 @@ export default function AssetsPage() {
       label: t('asset.total'),
       align: 'center',
       minWidth: 100,
-      format: (value, row) => `${value} ${row.unit}`,
+      format: (value) => `${value}`,
     },
     {
       id: 'availableQuantity',

@@ -49,7 +49,8 @@ export default function RequestsPage() {
       setLoading(true);
       const response = await requestService.getRequests();
       if (response.success) {
-        setRequests(response.data);
+        const dataFiltered = response.data.filter(req => req.requestType === 'REQUEST');
+        setRequests(dataFiltered);
       }
     } catch (error) {
       console.error('Error loading requests:', error);
@@ -157,17 +158,16 @@ export default function RequestsPage() {
       minWidth: 200,
     },
     {
+      id: 'serialNumber',
+      label: 'Serial Number',
+      align: 'center',
+      minWidth: 140,
+    },
+    {
       id: 'departmentName',
       label: 'แผนก',
       align: 'left',
       minWidth: 180,
-    },
-    {
-      id: 'quantity',
-      label: 'จำนวน',
-      align: 'center',
-      minWidth: 100,
-      format: (value) => `${value} หน่วย`,
     },
     {
       id: 'requestDate',

@@ -9,7 +9,7 @@
     "assetList": "รายการทรัพย์สิน",
     "assetRequest": "เบิกทรัพย์สิน",
     "assetApproved": "อนุมัติ",
-    "assetReturns": "คืนทรัพย์สิน",
+    "myAsset": "ทรัพย์สินของฉัน",
     "departments": "แผนก/สาขา",
     "reports": "รายงาน",
     "users": "ผู้ใช้งาน",
@@ -80,7 +80,8 @@
     "status": "สถานะ",
     "active": "ใช้งาน",
     "disposed": "จำหน่าย",
-    "usageHistory": "ประวัติการเบิกใช้"
+    "usageHistory": "ประวัติการเบิกใช้",
+    "serialNumber": "หมายเลข SN"
   },
   "request": {
     "title": "เบิกทรัพย์สิน",
@@ -132,7 +133,8 @@
     "errorNoSerialNumber": "กรุณากรอกหมายเลข Serial Number อย่างน้อย 1 รายการ",
     "errorSerialNumberCount": "จำนวน Serial Number ต้องตรงกับจำนวนที่ขอ ({{required}} รายการ)",
     "errorDuplicateSerialNumber": "พบหมายเลข Serial Number ซ้ำกัน กรุณาตรวจสอบอีกครั้ง",
-    "hint": "กรุณากรอกหมายเลข Serial Number ทั้งหมด {{count}} รายการ"
+    "hint": "กรุณากรอกหมายเลข Serial Number ทั้งหมด {{count}} รายการ",
+    "confirmApprovalMessage":"คุณแน่ใจหรือไม่ที่จะอนุมัติคำขอนี้?"
   },
   "department": {
     "title": "แผนก/สาขา",
