@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -8,23 +8,28 @@ import {
   DialogActions,
   Button,
   TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Stack,
   IconButton,
   Typography,
-  SelectChangeEvent,
+  Box,
+  InputAdornment,
+  Alert,
+  MenuItem,
+  CircularProgress,
 } from '@mui/material';
 import {
   Close as CloseIcon,
-  Person as PersonIcon,
-  Numbers as NumbersIcon,
-  CalendarMonth as CalendarIcon,
-  CheckCircle as CheckCircleIcon,
-  Inventory as InventoryIcon,
+  QrCodeScanner as QrCodeScannerIcon,
+  CameraAlt as CameraAltIcon,
 } from '@mui/icons-material';
+import dynamic from 'next/dynamic';
+import { getDepartment, type Department } from '@/src/services/masterService';
+
+// Dynamic import สำหรับ Scanner เพื่อหลีกเลี่ยง SSR issues
+const BarcodeScannerComponent = dynamic(
+  () => import('react-qr-barcode-scanner'),
+  { ssr: false }
+);
 
 interface RequestModalProps {
   open: boolean;
@@ -33,95 +38,98 @@ interface RequestModalProps {
 }
 
 export interface RequestFormData {
-  assetId: string;
-  assetName: string;
-  requesterName: string;
-  quantity: number;
-  requestDate: string;
-  approver: string;
+  serialNumber: string;
+  departmentId: string;
 }
 
-// Mock data - ในอนาคตจะดึงจาก API
-const assets = [
-  { id: '1', name: 'คอมพิวเตอร์ Desktop Dell OptiPlex 7090', code: 'IT-001', availableQuantity: 5 },
-  { id: '2', name: 'โน้ตบุ๊ค HP EliteBook 840 G8', code: 'IT-002', availableQuantity: 3 },
-  { id: '3', name: 'จอภาพ LG UltraWide 34"', code: 'IT-003', availableQuantity: 10 },
-  { id: '4', name: 'เมาส์ไร้สาย Logitech MX Master 3', code: 'IT-004', availableQuantity: 15 },
-  { id: '5', name: 'คีย์บอร์ดเกมมิ่ง Razer BlackWidow', code: 'IT-005', availableQuantity: 8 },
-  { id: '6', name: 'เครื่องพิมพ์ HP LaserJet Pro', code: 'IT-006', availableQuantity: 2 },
-  { id: '7', name: 'หูฟัง Sony WH-1000XM5', code: 'IT-007', availableQuantity: 12 },
-  { id: '8', name: 'เว็บแคม Logitech C920', code: 'IT-008', availableQuantity: 6 },
-];
-
-const approvers = [
-  { id: 1, name: 'สมชาย รักดี (Manager)' },
-  { id: 2, name: 'วิภาวี เรียนเก่ง (Director)' },
-  { id: 3, name: 'มานะ อดทน (IT Head)' },
-  { id: 4, name: 'พรทิพย์ ใจดี (Admin)' },
-];
-
 export default function RequestModal({ open, onClose, onSubmit }: RequestModalProps) {
+  const serialNumberRef = useRef<HTMLInputElement>(null);
+  const [error, setError] = useState<string>('');
+  const [showScanner, setShowScanner] = useState(false);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [loading, setLoading] = useState(false);
+
   const [formData, setFormData] = useState<RequestFormData>({
-    assetId: '',
-    assetName: '',
-    requesterName: '',
-    quantity: 1,
-    requestDate: new Date().toISOString().split('T')[0],
-    approver: '',
+    serialNumber: '',
+    departmentId: '',
   });
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
+  useEffect(() => {
+    if (open) {
+      setTimeout(() => {
+        serialNumberRef.current?.focus();
+      }, 100);
+      
+      // โหลดข้อมูล departments
+      loadDepartments();
+    }
+  }, [open]);
+
+  const loadDepartments = async () => {
+    try {
+      setLoading(true);
+      const data = await getDepartment();
+      setDepartments(data);
+    } catch (error) {
+      console.error('Error loading departments:', error);
+      setError('ไม่สามารถโหลดข้อมูลแผนกได้');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSerialNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
     setFormData((prev) => ({
       ...prev,
-      [name]: name === 'quantity' ? parseInt(value) || 1 : value,
+      serialNumber: value,
     }));
   };
 
-  const handleSelectChange = (e: SelectChangeEvent) => {
-    const { name, value } = e.target;
-    
-    // ถ้าเป็นการเลือก asset ให้เก็บทั้ง id และ name
-    if (name === 'assetId') {
-      const selectedAsset = assets.find(asset => asset.id === value);
-      setFormData((prev) => ({
-        ...prev,
-        assetId: value,
-        assetName: selectedAsset?.name || '',
-      }));
-    } else {
-      setFormData((prev) => ({
-        ...prev,
-        [name]: value,
-      }));
+  const handleSerialNumberKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      console.log('Barcode scanned:', formData.serialNumber);
     }
+  };
+
+  const handleScanSuccess = (result: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      serialNumber: result,
+    }));
+    setShowScanner(false);
+    console.log('Barcode scanned from camera:', result);
+  };
+
+  const handleScanError = (error: Error) => {
+    console.error('Scan error:', error);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!formData.serialNumber) {
+      setError('กรุณากรอกหมายเลข Serial Number');
+      return;
+    }
+
+    if (!formData.departmentId) {
+      setError('กรุณาเลือกแผนก');
+      return;
+    }
+
     onSubmit(formData);
-    // Reset form
-    setFormData({
-      assetId: '',
-      assetName: '',
-      requesterName: '',
-      quantity: 1,
-      requestDate: new Date().toISOString().split('T')[0],
-      approver: '',
-    });
+    handleClose();
   };
 
   const handleClose = () => {
-    onClose();
-    // Reset form on close
     setFormData({
-      assetId: '',
-      assetName: '',
-      requesterName: '',
-      quantity: 1,
-      requestDate: new Date().toISOString().split('T')[0],
-      approver: '',
+      serialNumber: '',
+      departmentId: '',
     });
+    setError('');
+    onClose();
   };
 
   return (
@@ -155,101 +163,147 @@ export default function RequestModal({ open, onClose, onSubmit }: RequestModalPr
       <form onSubmit={handleSubmit}>
         <DialogContent dividers sx={{ py: 3 }}>
           <Stack spacing={3}>
-            <FormControl fullWidth required>
-              <InputLabel>เลือก Asset ที่ต้องการเบิก</InputLabel>
-              <Select
-                name="assetId"
-                value={formData.assetId}
-                onChange={handleSelectChange}
-                label="เลือก Asset ที่ต้องการเบิก"
-                startAdornment={<InventoryIcon sx={{ mr: 1, color: 'text.secondary' }} />}
-                sx={{ borderRadius: 2 }}
-              >
-                {assets.map((asset) => (
-                  <MenuItem key={asset.id} value={asset.id}>
-                    <Stack direction="row" justifyContent="space-between" width="100%">
-                      <Typography>
-                        {asset.name}
-                        <Typography component="span" sx={{ ml: 1, color: 'text.secondary', fontSize: '0.875rem' }}>
-                          ({asset.code})
-                        </Typography>
-                      </Typography>
-                      <Typography 
-                        variant="caption" 
-                        sx={{ 
-                          color: asset.availableQuantity > 5 ? 'success.main' : 'warning.main',
-                          fontWeight: 600,
-                        }}
-                      >
-                        คงเหลือ: {asset.availableQuantity}
-                      </Typography>
-                    </Stack>
+            {error && (
+              <Alert severity="error" onClose={() => setError('')}>
+                {error}
+              </Alert>
+            )}
+
+            {/* Department Dropdown */}
+            <TextField
+              fullWidth
+              required
+              select
+              name="departmentId"
+              label="แผนก"
+              value={formData.departmentId}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  departmentId: e.target.value,
+                }))
+              }
+              disabled={loading}
+              sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+              helperText="เลือกแผนกที่ต้องการเบิกสินทรัพย์"
+            >
+              {loading ? (
+                <MenuItem disabled>
+                  <CircularProgress size={20} sx={{ mr: 1 }} />
+                  กำลังโหลด...
+                </MenuItem>
+              ) : departments.length > 0 ? (
+                departments.map((dept) => (
+                  <MenuItem key={dept.id} value={dept.id.toString()}>
+                    {dept.name} ({dept.code})
                   </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+                ))
+              ) : (
+                <MenuItem disabled>ไม่พบข้อมูลแผนก</MenuItem>
+              )}
+            </TextField>
 
-            <TextField
-              fullWidth
-              required
-              name="requesterName"
-              label="ชื่อผู้เบิกอุปกรณ์"
-              placeholder="กรอกชื่อ-นามสกุล ของท่าน"
-              value={formData.requesterName}
-              onChange={handleInputChange}
-              InputProps={{
-                startAdornment: <PersonIcon sx={{ mr: 1, color: 'text.secondary' }} />,
-              }}
-              sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
-            />
+            {/* Serial Number / Barcode Input with Camera Scanner */}
+            <Box>
+              <Stack direction="row" spacing={1} alignItems="flex-start">
+                <TextField
+                  fullWidth
+                  required
+                  inputRef={serialNumberRef}
+                  name="serialNumber"
+                  label="หมายเลข SN (Serial Number)"
+                  placeholder="สแกน Barcode หรือกรอกหมายเลข SN"
+                  value={formData.serialNumber}
+                  onChange={handleSerialNumberChange}
+                  onKeyDown={handleSerialNumberKeyDown}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <QrCodeScannerIcon sx={{ color: 'text.secondary' }} />
+                      </InputAdornment>
+                    ),
+                  }}
+                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+                  helperText="สามารถสแกน Barcode หรือกรอกด้วยมือได้"
+                />
+                <IconButton
+                  color="primary"
+                  onClick={() => setShowScanner(true)}
+                  sx={{
+                    mt: 0.5,
+                    bgcolor: 'primary.main',
+                    color: 'white',
+                    '&:hover': {
+                      bgcolor: 'primary.dark',
+                    },
+                  }}
+                >
+                  <CameraAltIcon />
+                </IconButton>
+              </Stack>
+            </Box>
 
-            <TextField
-              fullWidth
-              required
-              type="number"
-              name="quantity"
-              label="จำนวน (หน่วย)"
-              value={formData.quantity}
-              onChange={handleInputChange}
-              inputProps={{ min: 1 }}
-              InputProps={{
-                startAdornment: <NumbersIcon sx={{ mr: 1, color: 'text.secondary' }} />,
-              }}
-              sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
-            />
-
-            <TextField
-              fullWidth
-              required
-              type="date"
-              name="requestDate"
-              label="วันที่ต้องการเบิก"
-              value={formData.requestDate}
-              onChange={handleInputChange}
-              InputLabelProps={{ shrink: true }}
-              InputProps={{
-                startAdornment: <CalendarIcon sx={{ mr: 1, color: 'text.secondary' }} />,
-              }}
-              sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
-            />
-
-            <FormControl fullWidth required>
-              <InputLabel>ผู้อนุมัติ</InputLabel>
-              <Select
-                name="approver"
-                value={formData.approver}
-                onChange={handleSelectChange}
-                label="ผู้อนุมัติ"
-                startAdornment={<CheckCircleIcon sx={{ mr: 1, color: 'text.secondary' }} />}
-                sx={{ borderRadius: 2 }}
+            {/* Camera Scanner Dialog */}
+            {showScanner && (
+              <Dialog
+                open={showScanner}
+                onClose={() => setShowScanner(false)}
+                maxWidth="sm"
+                fullWidth
               >
-                {approvers.map((approver) => (
-                  <MenuItem key={approver.id} value={approver.name}>
-                    {approver.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+                <DialogTitle
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                  }}
+                >
+                  <Typography variant="h6" fontWeight={600}>
+                    สแกน Barcode/QR Code
+                  </Typography>
+                  <IconButton onClick={() => setShowScanner(false)} size="small">
+                    <CloseIcon />
+                  </IconButton>
+                </DialogTitle>
+                <DialogContent>
+                  <Box
+                    sx={{
+                      position: 'relative',
+                      width: '100%',
+                      minHeight: 300,
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      bgcolor: 'black',
+                      borderRadius: 2,
+                    }}
+                  >
+                    <BarcodeScannerComponent
+                      width={500}
+                      height={500}
+                      onUpdate={(err, result) => {
+                        if (result) {
+                          handleScanSuccess(result.getText());
+                        }
+                        if (err) {
+                          handleScanError(err as Error);
+                        }
+                      }}
+                    />
+                  </Box>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ mt: 2, textAlign: 'center' }}
+                  >
+                    จัดกล้องให้ตรงกับ Barcode หรือ QR Code
+                  </Typography>
+                </DialogContent>
+                <DialogActions>
+                  <Button onClick={() => setShowScanner(false)}>ปิด</Button>
+                </DialogActions>
+              </Dialog>
+            )}
           </Stack>
         </DialogContent>
 

@@ -28,24 +28,18 @@ import {
     Business as BusinessIcon,
 } from '@mui/icons-material';
 import { Select } from "@mui/material";
-import { Asset, getAssets } from "@/src/services/assetService";
+import AssetService, { Asset } from "@/src/services/assetService";
 import { getDepartment, Department } from "@/src/services/masterService";
 import { requestService, CreateRequestData } from "@/src/services/requestService";
+import UserService, { User } from "@/src/services/userService";
 
 interface FormData {
     assetId: string;
     departmentId: string;
-    requestAmount: number;
+    quantity: number;
     dateRequest: string;
     approvedBy: string;
 }
-
-const approvers = [
-    { id: 1, name: 'สมชาย รักดี (Manager)' },
-    { id: 2, name: 'วิภาวี เรียนเก่ง (Director)' },
-    { id: 3, name: 'มานะ อดทน (IT Head)' },
-    { id: 4, name: 'พรทิพย์ ใจดี (Admin)' },
-];
 
 export default function RequestFormPage() {
     const router = useRouter();
@@ -57,11 +51,13 @@ export default function RequestFormPage() {
     const [loadingAssets, setLoadingAssets] = useState(false);
     const [departments, setDepartments] = useState<Department[]>([]);
     const [loadingDepartments, setLoadingDepartments] = useState(false);
+    const [users, setUsers] = useState<User[]>([]);
+    const [loadingUsers, setLoadingUsers] = useState(false);
 
     const [formData, setFormData] = useState<FormData>({
         assetId: '',
         departmentId: '',
-        requestAmount: 1,
+        quantity: 1,
         dateRequest: new Date().toISOString().split('T')[0],
         approvedBy: '',
     });
@@ -76,7 +72,7 @@ export default function RequestFormPage() {
         const { name, value } = e.target;
         setFormData((prev) => ({
             ...prev,
-            [name]: name === 'requestAmount' ? parseInt(value) || 1 : value,
+            [name]: name === 'quantity' ? parseInt(value) || 1 : value,
         }));
     };
 
@@ -92,7 +88,7 @@ export default function RequestFormPage() {
         e.preventDefault();
 
         if (!formData.assetId || !formData.departmentId ||
-            !formData.requestAmount || !formData.dateRequest || !formData.approvedBy) {
+            !formData.quantity || !formData.dateRequest || !formData.approvedBy) {
             setSnackbar({
                 open: true,
                 message: 'กรุณากรอกข้อมูลให้ครบถ้วน',
@@ -105,7 +101,7 @@ export default function RequestFormPage() {
             const requestData: CreateRequestData = {
                 assetId: formData.assetId,
                 departmentId: formData.departmentId,
-                requestAmount: formData.requestAmount,
+                quantity: formData.quantity,
                 dateRequest: formData.dateRequest,
                 approvedBy: formData.approvedBy,
             };
@@ -152,7 +148,7 @@ export default function RequestFormPage() {
         const loadAssets = async () => {
             try {
                 setLoadingAssets(true);
-                const response = await getAssets({ 
+                const response = await AssetService.getAssets({ 
                     status: 'ACTIVE',
                     limit: 100 
                 });
@@ -187,8 +183,27 @@ export default function RequestFormPage() {
             }
         };
 
+        const loadUsers = async () => {
+            try {
+                setLoadingUsers(true);
+                const response = await UserService.getUserList();
+                console.log('Loaded users:', response);
+                setUsers(response.data || []);
+            } catch (error) {
+                console.error('Error loading users:', error);
+                setSnackbar({
+                    open: true,
+                    message: 'ไม่สามารถโหลดข้อมูล Users ได้',
+                    severity: 'error',
+                });
+            } finally {
+                setLoadingUsers(false);
+            }
+        };
+
         loadAssets();
         loadDepartments();
+        loadUsers();
 
         // loadMasterData();
         if (isEdit) {
@@ -299,9 +314,9 @@ export default function RequestFormPage() {
                                         required
                                         size="small"
                                         type="number"
-                                        name="requestAmount"
+                                        name="quantity"
                                         label="จำนวน (หน่วย)"
-                                        value={formData.requestAmount}
+                                        value={formData.quantity}
                                         onChange={handleInputChange}
                                         inputProps={{ min: 1 }}
                                         InputProps={{
@@ -327,19 +342,36 @@ export default function RequestFormPage() {
 
                                     {/* Approver */}
                                     <FormControl fullWidth required size="small">
-                                        <InputLabel>ผู้อนุมัติ (User ID)</InputLabel>
+                                        <InputLabel>ผู้อนุมัติ</InputLabel>
                                         <Select
                                             name="approvedBy"
                                             value={formData.approvedBy}
                                             onChange={handleSelectChange}
-                                            label="ผู้อนุมัติ (User ID)"
+                                            label="ผู้อนุมัติ"
                                             startAdornment={<CheckCircleIcon sx={{ mr: 1, color: 'text.secondary' }} />}
+                                            disabled={loadingUsers}
                                         >
-                                            {approvers.map((approver) => (
-                                                <MenuItem key={approver.id} value={approver.id.toString()}>
-                                                    {approver.name}
-                                                </MenuItem>
-                                            ))}
+                                            {loadingUsers ? (
+                                                <MenuItem disabled>กำลังโหลด...</MenuItem>
+                                            ) : users.length === 0 ? (
+                                                <MenuItem disabled>ไม่มีข้อมูล Users</MenuItem>
+                                            ) : (
+                                                users.map((user) => (
+                                                    <MenuItem key={user.id} value={user.id.toString()}>
+                                                        <Stack direction="column" spacing={0.25}>
+                                                            <Typography>
+                                                                {user.full_name}
+                                                                <Typography component="span" sx={{ ml: 1, color: 'text.secondary', fontSize: '0.875rem' }}>
+                                                                    ({user.username})
+                                                                </Typography>
+                                                            </Typography>
+                                                            <Typography variant="caption" color="text.secondary">
+                                                                {user.department_name}
+                                                            </Typography>
+                                                        </Stack>
+                                                    </MenuItem>
+                                                ))
+                                            )}
                                         </Select>
                                     </FormControl>
                                 </Box>

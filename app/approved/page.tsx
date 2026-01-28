@@ -44,7 +44,6 @@ export default function ApprovedPage() {
       setLoading(true);
       const response = await requestService.getRequests();
       if (response.success) {
-        // Filter only PENDING requests for approval
         const pendingRequests = response.data.filter(
           (req) => req.status === 'PENDING'
         );
@@ -77,7 +76,7 @@ export default function ApprovedPage() {
     try {
       setSubmitting(true);
       const response = await requestService.approveRequest(
-        selectedRequest.requestId,
+        selectedRequest.requestCode,
         { serialNumbers }
       );
 
@@ -108,7 +107,7 @@ export default function ApprovedPage() {
     if (!confirm(t('approve.confirmReject'))) return;
 
     try {
-      const response = await requestService.rejectRequest(request.requestId, {
+      const response = await requestService.rejectRequest(request.requestCode, {
         reason: 'Rejected by admin',
       });
 

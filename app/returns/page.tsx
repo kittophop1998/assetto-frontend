@@ -5,17 +5,19 @@ import { useRouter } from 'next/navigation';
 import {
   Box,
   Button,
-  TextField,
-  InputAdornment,
   IconButton,
   Chip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  DialogContentText,
 } from '@mui/material';
 import {
   Add as AddIcon,
-  Search as SearchIcon,
   Visibility as VisibilityIcon,
   Delete as DeleteIcon,
-  Refresh as RefreshIcon,
+  CheckCircle as CheckCircleIcon,
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import MainLayout from '@/src/components/layout/MainLayout';
@@ -26,6 +28,7 @@ import {
   AssetReturn,
   getAssetReturns,
   deleteAssetReturn,
+  approveAssetReturn,
 } from '@/src/services/returnService';
 
 export default function ReturnsPage() {
@@ -36,8 +39,9 @@ export default function ReturnsPage() {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [totalRows, setTotalRows] = useState(0);
-  const [search, setSearch] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
+  const [approveDialogOpen, setApproveDialogOpen] = useState(false);
+  const [selectedReturnCode, setSelectedReturnCode] = useState<string | null>(null);
 
   useEffect(() => {
     loadReturns();
@@ -71,6 +75,30 @@ export default function ReturnsPage() {
         console.error('Failed to delete return:', error);
       }
     }
+  };
+
+  const handleApproveClick = (return_code: string) => {
+    setSelectedReturnCode(return_code);
+    setApproveDialogOpen(true);
+  };
+
+  const handleApproveConfirm = async () => {
+    if (!selectedReturnCode) return;
+    
+    try {
+      await approveAssetReturn(selectedReturnCode);
+      setApproveDialogOpen(false);
+      setSelectedReturnCode(null);
+      loadReturns();
+    } catch (error) {
+      console.error('Failed to approve return:', error);
+      alert('เกิดข้อผิดพลาดในการอนุมัติคำขอคืน');
+    }
+  };
+
+  const handleApproveCancel = () => {
+    setApproveDialogOpen(false);
+    setSelectedReturnCode(null);
   };
 
   const formatDate = (dateString: string) => {
@@ -162,7 +190,7 @@ export default function ReturnsPage() {
       id: 'actions',
       label: t('common.actions'),
       align: 'center',
-      minWidth: 120,
+      minWidth: 150,
       format: (_, row) => (
         <Box
           sx={{
@@ -181,6 +209,17 @@ export default function ReturnsPage() {
           >
             <VisibilityIcon fontSize="small" />
           </IconButton>
+          {row.status === 'PENDING' && (
+            <IconButton
+              size="small"
+              color="success"
+              onClick={() => handleApproveClick(row.return_code)}
+              sx={{ minWidth: 'auto' }}
+              title="อนุมัติ"
+            >
+              <CheckCircleIcon fontSize="small" />
+            </IconButton>
+          )}
           <IconButton
             size="small"
             color="error"
@@ -274,6 +313,38 @@ export default function ReturnsPage() {
         onClose={() => setModalOpen(false)}
         onSuccess={loadReturns}
       />
+
+      {/* Approve Confirmation Dialog */}
+      <Dialog
+        open={approveDialogOpen}
+        onClose={handleApproveCancel}
+        aria-labelledby="approve-dialog-title"
+        aria-describedby="approve-dialog-description"
+      >
+        <DialogTitle id="approve-dialog-title">
+          ยืนยันการอนุมัติคำขอคืน
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="approve-dialog-description">
+            คุณต้องการอนุมัติคำขอคืนทรัพย์สิน {selectedReturnCode} หรือไม่?
+            <br />
+            การดำเนินการนี้จะเปลี่ยนสถานะเป็น &quot;RETURNED&quot;
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleApproveCancel} color="inherit">
+            ยกเลิก
+          </Button>
+          <Button 
+            onClick={handleApproveConfirm} 
+            variant="contained" 
+            color="success"
+            autoFocus
+          >
+            ยืนยันการอนุมัติ
+          </Button>
+        </DialogActions>
+      </Dialog>
     </MainLayout>
   );
 }

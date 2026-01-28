@@ -145,7 +145,7 @@ export default function ReturnDetailPage() {
                   color: 'primary.main',
                 }}
               >
-                {returnData.code}
+                {returnData.return_code}
               </Typography>
               <StatusBadge status={mapStatus(returnData.status)} />
             </Box>
@@ -183,7 +183,7 @@ export default function ReturnDetailPage() {
                     fontWeight={500}
                     sx={{ fontFamily: 'monospace' }}
                   >
-                    {returnData.code}
+                    {returnData.asset_request_code}
                   </Typography>
                 </Box>
 
@@ -277,20 +277,7 @@ export default function ReturnDetailPage() {
                     วันที่สร้างคำขอ
                   </Typography>
                   <Typography variant="body2" fontWeight={500}>
-                    {formatDate(returnData.created_at)}
-                  </Typography>
-                </Box>
-
-                <Box>
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    sx={{ display: 'block', mb: 0.5 }}
-                  >
-                    วันที่อัปเดตล่าสุด
-                  </Typography>
-                  <Typography variant="body2" fontWeight={500}>
-                    {formatDate(returnData.updated_at)}
+                    {formatDate(returnData.return_date)}
                   </Typography>
                 </Box>
 
@@ -304,19 +291,6 @@ export default function ReturnDetailPage() {
                   </Typography>
                   <Typography variant="body2" fontWeight={500}>
                     {formatDate(returnData.approval_date)}
-                  </Typography>
-                </Box>
-
-                <Box>
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    sx={{ display: 'block', mb: 0.5 }}
-                  >
-                    วันที่ดำเนินการเสร็จสิ้น
-                  </Typography>
-                  <Typography variant="body2" fontWeight={500}>
-                    {formatDate(returnData.fulfillment_date)}
                   </Typography>
                 </Box>
               </Box>

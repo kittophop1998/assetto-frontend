@@ -70,3 +70,12 @@ export const deleteAssetReturn = async (id: string): Promise<void> => {
     throw error;
   }
 };
+
+export const approveAssetReturn = async (code: string): Promise<void> => {
+  try {
+    await axios.post(`/api/v1/asset-returns/${code}/approve`);
+  } catch (error) {
+    console.error('Error approving asset return:', error);
+    throw error;
+  }
+};

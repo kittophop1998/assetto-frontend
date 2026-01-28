@@ -4,28 +4,28 @@ export type AssetItemStatus = 'AVAILABLE' | 'IN_USE' | 'MAINTENANCE' | 'DISPOSED
 
 export interface CreateAssetItemDTO {
   assetId: number;
+  assetCodeAC: string;
   serialNumber: string;
   purchaseDate?: string;
   warrantyEnd?: string;
-  remark?: string;
 }
 
 export interface UpdateAssetItemDTO {
+  assetCodeAC?: string;
   serialNumber?: string;
   status?: AssetItemStatus;
   purchaseDate?: string;
   warrantyEnd?: string;
-  remark?: string;
 }
 
 export interface AssetItem {
   id: number;
   assetModelId: number;
+  assetCodeAC: string;
   serialNumber: string;
   status: AssetItemStatus;
   purchaseDate: string;
   warrantyEnd: string;
-  remark?: string;
   createdAt: string;
   updatedAt: string;
   assetModel?: {

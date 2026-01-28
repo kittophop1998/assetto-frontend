@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import MainLayout from '@/src/components/layout/MainLayout';
 import DataTable, { Column } from '@/src/components/common/DataTable';
 import StatusBadge from '@/src/components/common/StatusBadge';
+import RequestModal, { RequestFormData } from '@/src/components/requests/RequestModal';
 import {
   Box,
   Paper,
@@ -24,7 +25,7 @@ import {
   Delete as DeleteIcon,
   CheckCircle as CheckCircleIcon,
 } from '@mui/icons-material';
-import { requestService, AssetRequest } from '@/src/services/requestService';
+import { requestService, AssetRequest, CreateRequestData } from '@/src/services/requestService';
 
 export default function RequestsPage() {
   const router = useRouter();
@@ -32,13 +33,13 @@ export default function RequestsPage() {
   const [loading, setLoading] = useState(true);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedRequest, setSelectedRequest] = useState<number | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: '',
     severity: 'success' as 'success' | 'error' | 'info',
   });
 
-  // Load requests from API
   useEffect(() => {
     loadRequests();
   }, []);
@@ -63,7 +64,38 @@ export default function RequestsPage() {
   };
 
   const handleOpenModal = () => {
-    router.push('/requests/create');
+    setModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setModalOpen(false);
+  };
+
+  const handleSubmitRequest = async (data: RequestFormData) => {
+    try {
+      const requestData: CreateRequestData = {
+        serialNumber: data.serialNumber,
+        departmentId: data.departmentId,
+      };
+
+      const response = await requestService.createRequest(requestData);
+
+      if (response.success) {
+        setSnackbar({
+          open: true,
+          message: 'บันทึกรายการขอเบิกเรียบร้อยแล้ว',
+          severity: 'success',
+        });
+        loadRequests();
+      }
+    } catch (error) {
+      console.error('Error submitting request:', error);
+      setSnackbar({
+        open: true,
+        message: 'ไม่สามารถบันทึกรายการขอเบิกได้',
+        severity: 'error',
+      });
+    }
   };
 
   const handleMenuClose = () => {
@@ -286,6 +318,13 @@ export default function RequestsPage() {
           {snackbar.message}
         </Alert>
       </Snackbar>
+
+      {/* Request Modal */}
+      <RequestModal
+        open={modalOpen}
+        onClose={handleCloseModal}
+        onSubmit={handleSubmitRequest}
+      />
     </MainLayout>
   );
 }

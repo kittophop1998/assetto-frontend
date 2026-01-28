@@ -31,7 +31,7 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon
 } from '@mui/icons-material';
-import { AssetFormData, createAsset, getAssetById, updateAsset } from '@/src/services/assetService';
+import AssetService, { AssetFormData } from '@/src/services/assetService';
 import MainLayout from '@/src/components/layout/MainLayout';
 import { Category, Department, getMasterData } from '@/src/services/masterService';
 import { AssetItem, createAssetItem, CreateAssetItemDTO, deleteAssetItem, getAssetItems, updateAssetItem } from '@/src/services/assetItemService';
@@ -51,10 +51,10 @@ export default function AssetFormPage() {
   const [openModal, setOpenModal] = useState(false);
   const [editingEquipment, setEditingEquipment] = useState<AssetItem | null>(null);
   const [equipmentForm, setEquipmentForm] = useState({
+    assetCodeAC: '',
     serialNumber: '',
     purchaseDate: '',
     warrantyEnd: '',
-    remark: '',
   });
 
   const [formData, setFormData] = useState<AssetFormData>({
@@ -62,9 +62,6 @@ export default function AssetFormPage() {
     name: '',
     categoryId: 0,
     description: '',
-    unit: 'unit',
-    totalQuantity: 0,
-    availableQuantity: 0,
     minimumQty: 0,
     status: 'ACTIVE',
     departmentId: 0,
@@ -80,7 +77,7 @@ export default function AssetFormPage() {
     const loadData = async () => {
       // Always load master data
       await loadMasterData();
-      
+
       // If editing an existing asset, load both asset detail and items in parallel
       if (isEdit) {
         await Promise.all([
@@ -123,15 +120,12 @@ export default function AssetFormPage() {
   const loadAsset = async () => {
     setLoadingAsset(true);
     try {
-      const asset = await getAssetById(params.id as string);
+      const asset = await AssetService.getAssetById(params.id as string);
       setFormData({
         code: asset.code,
         name: asset.name,
         categoryId: asset.categoryId || asset.category_id || 0,
         description: asset.description || '',
-        unit: asset.unit,
-        totalQuantity: asset.totalQuantity || asset.total_quantity || 0,
-        availableQuantity: asset.availableQuantity || asset.available_quantity || 0,
         minimumQty: asset.minimumQty || asset.minimum_qty || 0,
         status: asset.status,
         departmentId: (() => {
@@ -151,7 +145,7 @@ export default function AssetFormPage() {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: ['totalQuantity', 'availableQuantity', 'minimumQty', 'categoryId', 'departmentId'].includes(name)
+      [name]: ['minimumQty', 'categoryId', 'departmentId'].includes(name)
         ? Number(value)
         : value,
     }));
@@ -166,20 +160,17 @@ export default function AssetFormPage() {
         code: formData.code,
         name: formData.name,
         categoryId: formData.categoryId,
-        unit: formData.unit,
         description: formData.description,
-        totalQuantity: formData.totalQuantity,
-        availableQuantity: formData.availableQuantity,
         minimumQty: formData.minimumQty,
         status: formData.status,
         departmentId: formData.departmentId,
       };
 
       if (isEdit) {
-        await updateAsset(params.id as string, requestBody);
+        await AssetService.updateAsset(params.id as string, requestBody);
         alert('อัปเดตสินทรัพย์สำเร็จ');
       } else {
-        await createAsset(requestBody);
+        await AssetService.createAsset(requestBody);
         alert('สร้างสินทรัพย์สำเร็จ');
       }
       router.push('/assets');
@@ -195,10 +186,10 @@ export default function AssetFormPage() {
   const handleOpenModal = () => {
     setEditingEquipment(null);
     setEquipmentForm({
+      assetCodeAC: '',
       serialNumber: '',
       purchaseDate: '',
       warrantyEnd: '',
-      remark: '',
     });
     setOpenModal(true);
   };
@@ -207,16 +198,21 @@ export default function AssetFormPage() {
     setOpenModal(false);
     setEditingEquipment(null);
     setEquipmentForm({
+      assetCodeAC: '',
       serialNumber: '',
       purchaseDate: '',
       warrantyEnd: '',
-      remark: '',
     });
   };
 
   const handleSaveEquipment = async () => {
+    if (!equipmentForm.assetCodeAC.trim()) {
+      alert('กรุณากรอกเลข Asset จากบัญชี');
+      return;
+    }
+
     if (!equipmentForm.serialNumber.trim()) {
-      alert('กรุณากรอกเลข SN');
+      alert('กรุณากรอกเลข Serial Number');
       return;
     }
 
@@ -234,10 +230,10 @@ export default function AssetFormPage() {
       if (editingEquipment) {
         // Update existing item
         const updated = await updateAssetItem(editingEquipment.id, {
+          assetCodeAC: equipmentForm.assetCodeAC,
           serialNumber: equipmentForm.serialNumber,
           purchaseDate: equipmentForm.purchaseDate,
           warrantyEnd: equipmentForm.warrantyEnd,
-          remark: equipmentForm.remark,
         });
 
         setEquipments(prev => prev.map(eq =>
@@ -247,10 +243,10 @@ export default function AssetFormPage() {
         // Create new item
         const createData: CreateAssetItemDTO = {
           assetId: Number(params.id),
+          assetCodeAC: equipmentForm.assetCodeAC,
           serialNumber: equipmentForm.serialNumber,
           purchaseDate: equipmentForm.purchaseDate,
           warrantyEnd: equipmentForm.warrantyEnd,
-          remark: equipmentForm.remark,
         };
 
         await createAssetItem(createData);
@@ -267,10 +263,10 @@ export default function AssetFormPage() {
   const handleEditEquipment = (equipment: AssetItem) => {
     setEditingEquipment(equipment);
     setEquipmentForm({
+      assetCodeAC: equipment.assetCodeAC || '',
       serialNumber: equipment.serialNumber,
       purchaseDate: equipment.purchaseDate,
       warrantyEnd: equipment.warrantyEnd,
-      remark: equipment.remark || '',
     });
     setOpenModal(true);
   };
@@ -359,20 +355,6 @@ export default function AssetFormPage() {
                       ))}
                     </TextField>
 
-                    <TextField
-                      fullWidth
-                      required
-                      select
-                      label="หน่วย"
-                      name="unit"
-                      value={formData.unit}
-                      onChange={handleChange}
-                    >
-                      <MenuItem value="unit">ชิ้น (unit)</MenuItem>
-                      <MenuItem value="box">กล่อง (box)</MenuItem>
-                      <MenuItem value="set">ชุด (set)</MenuItem>
-                    </TextField>
-
                     <Box sx={{ gridColumn: { xs: '1', sm: '1 / -1' } }}>
                       <TextField
                         fullWidth
@@ -384,28 +366,6 @@ export default function AssetFormPage() {
                         onChange={handleChange}
                       />
                     </Box>
-
-                    <TextField
-                      fullWidth
-                      required
-                      type="number"
-                      label="จำนวนทั้งหมด"
-                      name="totalQuantity"
-                      value={formData.totalQuantity}
-                      onChange={handleChange}
-                      inputProps={{ min: 0 }}
-                    />
-
-                    <TextField
-                      fullWidth
-                      required
-                      type="number"
-                      label="จำนวนคงเหลือ"
-                      name="availableQuantity"
-                      value={formData.availableQuantity}
-                      onChange={handleChange}
-                      inputProps={{ min: 0 }}
-                    />
 
                     <TextField
                       fullWidth
@@ -492,7 +452,8 @@ export default function AssetFormPage() {
                       <TableHead>
                         <TableRow sx={{ bgcolor: 'grey.50' }}>
                           <TableCell sx={{ fontWeight: 600 }}>ลำดับ</TableCell>
-                          <TableCell sx={{ fontWeight: 600 }}>เลข SN</TableCell>
+                          <TableCell sx={{ fontWeight: 600 }}>เลข Asset จากบัญชี</TableCell>
+                          <TableCell sx={{ fontWeight: 600 }}>เลข Serial Number</TableCell>
                           <TableCell sx={{ fontWeight: 600 }}>วันที่จัดซื้อ</TableCell>
                           <TableCell sx={{ fontWeight: 600 }}>วันที่หมดประกัน</TableCell>
                           <TableCell sx={{ fontWeight: 600 }}>สถานะ</TableCell>
@@ -502,7 +463,7 @@ export default function AssetFormPage() {
                       <TableBody>
                         {equipments.length === 0 ? (
                           <TableRow>
-                            <TableCell colSpan={6} align="center" sx={{ py: 4, color: 'text.secondary' }}>
+                            <TableCell colSpan={7} align="center" sx={{ py: 4, color: 'text.secondary' }}>
                               ไม่มีข้อมูลอุปกรณ์
                             </TableCell>
                           </TableRow>
@@ -510,6 +471,7 @@ export default function AssetFormPage() {
                           equipments.map((equipment, index) => (
                             <TableRow key={equipment.id} hover>
                               <TableCell>{index + 1}</TableCell>
+                              <TableCell>{equipment.assetCodeAC}</TableCell>
                               <TableCell>{equipment.serialNumber}</TableCell>
                               <TableCell>{equipment.purchaseDate}</TableCell>
                               <TableCell>{equipment.warrantyEnd}</TableCell>
@@ -557,11 +519,20 @@ export default function AssetFormPage() {
                 <TextField
                   fullWidth
                   required
-                  label="เลข SN"
+                  label="เลข Asset จากบัญชี"
+                  value={equipmentForm.assetCodeAC}
+                  onChange={(e) => setEquipmentForm(prev => ({ ...prev, assetCodeAC: e.target.value }))}
+                  placeholder="กรอกเลข Asset จากบัญชี"
+                  autoFocus
+                />
+
+                <TextField
+                  fullWidth
+                  required
+                  label="เลข Serial Number"
                   value={equipmentForm.serialNumber}
                   onChange={(e) => setEquipmentForm(prev => ({ ...prev, serialNumber: e.target.value }))}
                   placeholder="กรอกเลข Serial Number"
-                  autoFocus
                 />
 
                 <TextField
@@ -582,16 +553,6 @@ export default function AssetFormPage() {
                   value={equipmentForm.warrantyEnd}
                   onChange={(e) => setEquipmentForm(prev => ({ ...prev, warrantyEnd: e.target.value }))}
                   InputLabelProps={{ shrink: true }}
-                />
-
-                <TextField
-                  fullWidth
-                  multiline
-                  rows={2}
-                  label="หมายเหตุ"
-                  value={equipmentForm.remark}
-                  onChange={(e) => setEquipmentForm(prev => ({ ...prev, remark: e.target.value }))}
-                  placeholder="กรอกหมายเหตุ (ถ้ามี)"
                 />
               </Box>
             </DialogContent>

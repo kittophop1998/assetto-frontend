@@ -21,7 +21,7 @@ import {
   Login as LoginIcon,
   Layers as LayersIcon,
 } from '@mui/icons-material';
-import { authService } from '@/src/services/authService';
+import AuthService from '@/src/services/authService';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -53,28 +53,17 @@ export default function LoginPage() {
     setMessageType('');
 
     try {
-      // TODO: Integrate with real auth service
-      // const response = await authService.login({
-      //   username: formData.username,
-      //   password: formData.password,
-      // });
+      const response = await AuthService.login({
+        username: formData.username,
+        password: formData.password,
+      });
 
-      // localStorage.setItem('accessToken', response.accessToken);
-      // localStorage.setItem('user', JSON.stringify(response.user));
+      localStorage.setItem('accessToken', response.data.accessToken);
+      localStorage.setItem('user', JSON.stringify(response.data.user));
 
-      // Mock authentication
-      if (formData.username !== 'admin' || formData.password !== '123456') {
-        throw new Error(t('auth.invalidCredentials'));
-      }
-      // ----
-
-      localStorage.setItem('accessToken', 'mocked-access-token');
-
-      // Show success message
       setMessageType('success');
-      setMessage(t('auth.loggingIn'));
+      setMessage(response.message || t('auth.loggingIn'));
 
-      // Redirect after short delay
       setTimeout(() => {
         setMessage(t('auth.welcomeUser', { username: formData.username }));
         setTimeout(() => {
@@ -262,13 +251,13 @@ export default function LoginPage() {
               }}
             >
               <Typography variant="caption" color="info.main" fontWeight="600" display="block" gutterBottom>
-                🔐 Mock Credentials for Testing
+                🔐 Test Credentials
               </Typography>
               <Typography variant="caption" color="text.secondary" component="div">
-                <strong>Username:</strong> admin
+                <strong>Username:</strong> earthdev
               </Typography>
               <Typography variant="caption" color="text.secondary" component="div">
-                <strong>Password:</strong> password123
+                <strong>Password:</strong> Aa123456
               </Typography>
             </Box>
           </Box>

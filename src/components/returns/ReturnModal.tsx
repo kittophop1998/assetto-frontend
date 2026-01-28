@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -12,23 +12,17 @@ import {
   MenuItem,
   Typography,
   Alert,
+  CircularProgress,
 } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { createAssetReturn } from '@/src/services/returnService';
+import { requestService, AssetRequest } from '@/src/services/requestService';
 
 interface ReturnModalProps {
   open: boolean;
   onClose: () => void;
   onSuccess: () => void;
 }
-
-// Mock data for asset requests - will be replaced with actual API call
-const mockAssetRequests = [
-  { code: 'AR-0001', description: 'คอมพิวเตอร์ - แผนก IT' },
-  { code: 'AR-0002', description: 'เก้าอี้สำนักงาน - แผนก HR' },
-  { code: 'AR-0003', description: 'โต๊ะทำงาน - แผนก Finance' },
-  { code: 'AR-0004', description: 'เครื่องพิมพ์ - แผนก Marketing' },
-];
 
 export default function ReturnModal({
   open,
@@ -37,11 +31,37 @@ export default function ReturnModal({
 }: ReturnModalProps) {
   const { t } = useTranslation('common');
   const [loading, setLoading] = useState(false);
+  const [loadingRequests, setLoadingRequests] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [assetRequests, setAssetRequests] = useState<AssetRequest[]>([]);
   const [formData, setFormData] = useState({
     assetRequestCode: '',
     notes: '',
   });
+
+  useEffect(() => {
+    if (open) {
+      loadAssetRequests();
+    }
+  }, [open]);
+
+  const loadAssetRequests = async () => {
+    try {
+      setLoadingRequests(true);
+      const response = await requestService.getRequests();
+      if (response.success) {
+        const returnableRequests = response.data.filter(
+          (req) => req.status === 'APPROVED' || req.status === 'FULFILLED'
+        );
+        setAssetRequests(returnableRequests);
+      }
+    } catch (err) {
+      console.error('Error loading asset requests:', err);
+      setError('ไม่สามารถโหลดรายการคำขอยืมได้');
+    } finally {
+      setLoadingRequests(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,10 +104,10 @@ export default function ReturnModal({
   };
 
   return (
-    <Dialog 
-      open={open} 
-      onClose={handleClose} 
-      maxWidth="sm" 
+    <Dialog
+      open={open}
+      onClose={handleClose}
+      maxWidth="sm"
       fullWidth
       PaperProps={{
         sx: {
@@ -122,21 +142,36 @@ export default function ReturnModal({
               onChange={(e) =>
                 setFormData({ ...formData, assetRequestCode: e.target.value })
               }
-              disabled={loading}
+              disabled={loading || loadingRequests}
               helperText="เลือกคำขอยืมทรัพย์สินที่ต้องการคืน"
             >
-              {mockAssetRequests.map((request) => (
-                <MenuItem key={request.code} value={request.code}>
-                  <Box>
-                    <Typography variant="body2" fontWeight={500}>
-                      {request.code}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {request.description}
-                    </Typography>
+              {loadingRequests ? (
+                <MenuItem disabled>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <CircularProgress size={20} />
+                    <Typography variant="body2">กำลังโหลดข้อมูล...</Typography>
                   </Box>
                 </MenuItem>
-              ))}
+              ) : assetRequests.length === 0 ? (
+                <MenuItem disabled>
+                  <Typography variant="body2" color="text.secondary">
+                    ไม่มีคำขอยืมที่สามารถคืนได้
+                  </Typography>
+                </MenuItem>
+              ) : (
+                assetRequests.map((request) => (
+                  <MenuItem key={request.requestId} value={request.requestCode}>
+                    <Box>
+                      <Typography variant="body2" fontWeight={500}>
+                        {request.requestCode}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {request.assetName} - {request.departmentName} ({request.quantity} หน่วย)
+                      </Typography>
+                    </Box>
+                  </MenuItem>
+                ))
+              )}
             </TextField>
 
             <TextField
@@ -156,8 +191,8 @@ export default function ReturnModal({
         </DialogContent>
 
         <DialogActions sx={{ px: 3, pb: 3, gap: 1 }}>
-          <Button 
-            onClick={handleClose} 
+          <Button
+            onClick={handleClose}
             disabled={loading}
             variant="outlined"
             sx={{ minWidth: 100 }}

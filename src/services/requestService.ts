@@ -15,11 +15,8 @@ export interface AssetRequest {
 }
 
 export interface CreateRequestData {
-  assetId: string;
+  serialNumber: string;
   departmentId: string;
-  requestAmount: number;
-  dateRequest: string;
-  approvedBy: string;
 }
 
 export interface ApiResponse<T> {
@@ -61,14 +58,14 @@ export const requestService = {
   },
 
   // Approve request with serial numbers
-  approveRequest: async (id: number, data: { serialNumbers: string[] }): Promise<ApiResponse<string>> => {
-    const response = await axiosInstance.put(`/asset-requests/${id}/approve`, data);
+  approveRequest: async (code: string, data: { serialNumbers: string[] }): Promise<ApiResponse<string>> => {
+    const response = await axiosInstance.put(`/asset-requests/${code}/approve`, data);
     return response.data;
   },
 
   // Reject request
-  rejectRequest: async (id: number, data: { reason: string }): Promise<ApiResponse<string>> => {
-    const response = await axiosInstance.post(`/asset-requests/${id}/reject`, data);
+  rejectRequest: async (code: string, data: { reason: string }): Promise<ApiResponse<string>> => {
+    const response = await axiosInstance.post(`/asset-requests/${code}/reject`, data);
     return response.data;
   },
 };
