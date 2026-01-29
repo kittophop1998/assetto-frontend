@@ -10,8 +10,6 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
-  IconButton,
-  Divider,
   Typography,
   useMediaQuery,
   useTheme,
@@ -20,12 +18,6 @@ import {
   Dashboard as DashboardIcon,
   Inventory as InventoryIcon,
   Assignment as AssignmentIcon,
-  Business as BusinessIcon,
-  BarChart as BarChartIcon,
-  People as PeopleIcon,
-  Settings as SettingsIcon,
-  ChevronLeft,
-  ChevronRight,
   Category as CategoryIcon,
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
@@ -42,17 +34,33 @@ interface MenuItem {
 interface SidebarProps {
   open?: boolean;
   mobileOpen?: boolean;
-  onToggle?: () => void;
   onMobileToggle?: () => void;
 }
 
-export default function Sidebar({ open: externalOpen, mobileOpen = false, onToggle, onMobileToggle }: SidebarProps) {
+export default function Sidebar({ open: externalOpen, mobileOpen = false, onMobileToggle }: SidebarProps) {
   const { t } = useTranslation('common');
   const router = useRouter();
   const pathname = usePathname();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const [internalOpen, setInternalOpen] = useState(true);
+  const [internalOpen] = useState(true);
+  const [isApprovedUser] = useState(() => {
+    if (typeof window === 'undefined') {
+      return false;
+    }
+
+    const storedUser = localStorage.getItem('user');
+    if (!storedUser) {
+      return false;
+    }
+
+    try {
+      const parsedUser = JSON.parse(storedUser);
+      return Boolean(parsedUser?.is_approved);
+    } catch {
+      return false;
+    }
+  });
 
   // ใช้ external open ถ้ามี ไม่งั้นใช้ internal open
   const isOpen = externalOpen !== undefined ? externalOpen : internalOpen;
@@ -94,14 +102,6 @@ export default function Sidebar({ open: externalOpen, mobileOpen = false, onTogg
     router.push(path);
     if (isMobile && onMobileToggle) {
       onMobileToggle();
-    }
-  };
-
-  const handleToggle = () => {
-    if (onToggle) {
-      onToggle();
-    } else {
-      setInternalOpen(!internalOpen);
     }
   };
 
@@ -148,11 +148,14 @@ export default function Sidebar({ open: externalOpen, mobileOpen = false, onTogg
       {/* Menu Items */}
       <List sx={{ px: 1.5, flex: 1 }}>
         {menuItems.map((item) => {
-          const isActive = pathname === item.path || pathname?.startsWith(item.path + '/');
+          const isApprovedMenu = item.path === '/approved';
+          const isDisabled = isApprovedMenu && isApprovedUser;
+          const isActive = !isDisabled && (pathname === item.path || pathname?.startsWith(item.path + '/'));
           return (
             <ListItem key={item.path} disablePadding sx={{ mb: 0.5 }}>
               <ListItemButton
                 onClick={() => handleNavigate(item.path)}
+                disabled={isDisabled}
                 sx={{
                   borderRadius: 1.5,
                   py: 1.5,
@@ -165,6 +168,14 @@ export default function Sidebar({ open: externalOpen, mobileOpen = false, onTogg
                   '& .MuiListItemIcon-root': {
                     color: isActive ? 'white' : 'grey.600',
                     minWidth: (isOpen || isMobile) ? 40 : 'auto',
+                  },
+                  '&.Mui-disabled': {
+                    color: 'grey.400',
+                    opacity: 0.7,
+                    backgroundColor: 'transparent',
+                    '& .MuiListItemIcon-root': {
+                      color: 'grey.400',
+                    },
                   },
                 }}
               >

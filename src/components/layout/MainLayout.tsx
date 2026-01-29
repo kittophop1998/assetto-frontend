@@ -5,9 +5,6 @@ import { Box } from '@mui/material';
 import Sidebar from './Sidebar';
 import Header from './Header';
 
-const DRAWER_WIDTH = 260;
-const DRAWER_WIDTH_COLLAPSED = 72;
-
 interface MainLayoutProps {
   children: React.ReactNode;
   title: string;
@@ -30,7 +27,6 @@ export default function MainLayout({ children, title }: MainLayoutProps) {
       <Sidebar
         open={sidebarOpen}
         mobileOpen={mobileOpen}
-        onToggle={handleSidebarToggle}
         onMobileToggle={handleDrawerToggle}
       />
 
