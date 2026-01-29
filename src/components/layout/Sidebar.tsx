@@ -98,7 +98,8 @@ export default function Sidebar({ open: externalOpen, mobileOpen = false, onMobi
     // },
   ];
 
-  const menuFiltered = menuItems.filter((item) => item.path !== '/approved' || isApprovedUser);
+  const restrictedPaths = ['/dashboard', '/assets', '/approved'];
+  const menuFiltered = menuItems.filter((item) => isApprovedUser || !restrictedPaths.includes(item.path));
 
   const handleNavigate = (path: string) => {
     router.push(path);
@@ -150,15 +151,11 @@ export default function Sidebar({ open: externalOpen, mobileOpen = false, onMobi
       {/* Menu Items */}
       <List sx={{ px: 1.5, flex: 1 }}>
         {menuFiltered.map((item) => {
-          const isApprovedMenu = item.path === '/approved';
-          const isDisabled = isApprovedMenu && !isApprovedUser;
-          console.log('isDisabled for', item.path, ':', isDisabled);
-          const isActive = !isDisabled && (pathname === item.path || pathname?.startsWith(item.path + '/'));
+          const isActive = pathname === item.path || pathname?.startsWith(item.path + '/');
           return (
             <ListItem key={item.path} disablePadding sx={{ mb: 0.5 }}>
               <ListItemButton
                 onClick={() => handleNavigate(item.path)}
-                disabled={isDisabled}
                 sx={{
                   borderRadius: 1.5,
                   py: 1.5,
@@ -171,14 +168,6 @@ export default function Sidebar({ open: externalOpen, mobileOpen = false, onMobi
                   '& .MuiListItemIcon-root': {
                     color: isActive ? 'white' : 'grey.600',
                     minWidth: (isOpen || isMobile) ? 40 : 'auto',
-                  },
-                  '&.Mui-disabled': {
-                    color: 'grey.400',
-                    opacity: 0.7,
-                    backgroundColor: 'transparent',
-                    '& .MuiListItemIcon-root': {
-                      color: 'grey.400',
-                    },
                   },
                 }}
               >
