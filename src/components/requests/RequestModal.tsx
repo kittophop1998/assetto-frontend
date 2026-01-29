@@ -14,6 +14,7 @@ import {
   Box,
   InputAdornment,
   Alert,
+  CircularProgress,
 } from '@mui/material';
 import {
   Close as CloseIcon,
@@ -21,6 +22,7 @@ import {
   CameraAlt as CameraAltIcon,
 } from '@mui/icons-material';
 import dynamic from 'next/dynamic';
+import { getAssetItemBySerialNumber, AssetItemLookup } from '@/src/services/assetItemService';
 
 // Dynamic import สำหรับ Scanner เพื่อหลีกเลี่ยง SSR issues
 const BarcodeScannerComponent = dynamic(
@@ -42,6 +44,9 @@ export default function RequestModal({ open, onClose, onSubmit }: RequestModalPr
   const serialNumberRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string>('');
   const [showScanner, setShowScanner] = useState(false);
+  const [assetDetail, setAssetDetail] = useState<AssetItemLookup | null>(null);
+  const [assetLoading, setAssetLoading] = useState(false);
+  const [assetError, setAssetError] = useState('');
 
   const [formData, setFormData] = useState<RequestFormData>({
     serialNumber: '',
@@ -52,6 +57,8 @@ export default function RequestModal({ open, onClose, onSubmit }: RequestModalPr
       setTimeout(() => {
         serialNumberRef.current?.focus();
       }, 100);
+      setAssetDetail(null);
+      setAssetError('');
     }
   }, [open]);
 
@@ -61,12 +68,14 @@ export default function RequestModal({ open, onClose, onSubmit }: RequestModalPr
       ...prev,
       serialNumber: value,
     }));
+    setAssetDetail(null);
+    setAssetError('');
   };
 
   const handleSerialNumberKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      console.log('Barcode scanned:', formData.serialNumber);
+      fetchAssetDetail(formData.serialNumber);
     }
   };
 
@@ -76,11 +85,36 @@ export default function RequestModal({ open, onClose, onSubmit }: RequestModalPr
       serialNumber: result,
     }));
     setShowScanner(false);
-    console.log('Barcode scanned from camera:', result);
+    fetchAssetDetail(result);
   };
 
   const handleScanError = (error: Error) => {
     console.error('Scan error:', error);
+  };
+
+  const fetchAssetDetail = async (serialNumber: string) => {
+    if (!serialNumber?.trim()) {
+      setAssetDetail(null);
+      return;
+    }
+
+    try {
+      setAssetLoading(true);
+      setAssetError('');
+      const response = await getAssetItemBySerialNumber(serialNumber.trim());
+      if (response.success) {
+        setAssetDetail(response.data);
+      } else {
+        setAssetDetail(null);
+        setAssetError('ไม่พบข้อมูลสินทรัพย์จากหมายเลข Serial Number นี้');
+      }
+    } catch (fetchError) {
+      console.error('Asset lookup error:', fetchError);
+      setAssetDetail(null);
+      setAssetError('ไม่สามารถดึงข้อมูลสินทรัพย์ได้');
+    } finally {
+      setAssetLoading(false);
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -100,7 +134,16 @@ export default function RequestModal({ open, onClose, onSubmit }: RequestModalPr
       serialNumber: '',
     });
     setError('');
+    setAssetDetail(null);
+    setAssetError('');
     onClose();
+  };
+
+  const statusLabels: Record<string, string> = {
+    AVAILABLE: 'พร้อมใช้งาน',
+    IN_USE: 'กำลังใช้งาน',
+    MAINTENANCE: 'อยู่ระหว่างซ่อม',
+    DISPOSED: 'จำหน่ายแล้ว',
   };
 
   return (
@@ -179,6 +222,91 @@ export default function RequestModal({ open, onClose, onSubmit }: RequestModalPr
                 </IconButton>
               </Stack>
             </Box>
+
+            {assetLoading && (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, px: 1 }}>
+                <CircularProgress size={20} />
+                <Typography variant="body2" color="text.secondary">
+                  กำลังตรวจสอบข้อมูลสินทรัพย์...
+                </Typography>
+              </Box>
+            )}
+
+            {assetError && !assetLoading && (
+              <Alert severity="warning" onClose={() => setAssetError('')}>
+                {assetError}
+              </Alert>
+            )}
+
+            {assetDetail && !assetLoading && (
+              <Box
+                sx={{
+                  borderRadius: 2,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  p: 2,
+                  bgcolor: 'background.default',
+                }}
+              >
+                <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 1 }}>
+                  รายละเอียดสินทรัพย์
+                </Typography>
+                <Stack spacing={1}>
+                  <Box>
+                    <Typography variant="body2" color="text.secondary">
+                      ชื่อสินทรัพย์
+                    </Typography>
+                    <Typography variant="body1" fontWeight={500}>
+                      {assetDetail.assetName}
+                    </Typography>
+                  </Box>
+                  <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                    <Box>
+                      <Typography variant="body2" color="text.secondary">
+                        Asset Code
+                      </Typography>
+                      <Typography variant="body1" fontWeight={500}>
+                        {assetDetail.assetCodeAC}
+                      </Typography>
+                    </Box>
+                    <Box>
+                      <Typography variant="body2" color="text.secondary">
+                        Serial Number
+                      </Typography>
+                      <Typography variant="body1" fontWeight={500}>
+                        {assetDetail.serialNumber}
+                      </Typography>
+                    </Box>
+                    <Box>
+                      <Typography variant="body2" color="text.secondary">
+                        สถานะ
+                      </Typography>
+                      <Typography variant="body1" fontWeight={500}>
+                        {statusLabels[assetDetail.status] ?? assetDetail.status}
+                      </Typography>
+                    </Box>
+                  </Stack>
+                  <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                    <Box>
+                      <Typography variant="body2" color="text.secondary">
+                        วันที่ซื้อ
+                      </Typography>
+                      <Typography variant="body1" fontWeight={500}>
+                        {new Date(assetDetail.purchaseDate).toLocaleDateString('th-TH')}
+                      </Typography>
+                    </Box>
+                    <Box>
+                      <Typography variant="body2" color="text.secondary">
+                        หมดประกัน
+                      </Typography>
+                      <Typography variant="body1" fontWeight={500}>
+                        {new Date(assetDetail.warrantyEnd).toLocaleDateString('th-TH')}
+                      </Typography>
+                    </Box>
+                  </Stack>
+                </Stack>
+              </Box>
+            )}
 
             {/* Camera Scanner Dialog */}
             {showScanner && (

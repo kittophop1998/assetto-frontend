@@ -37,6 +37,26 @@ export interface AssetItem {
   };
 }
 
+export interface AssetItemLookup {
+  id: number;
+  assetId: number;
+  assetName: string;
+  assetCodeAC: string;
+  serialNumber: string;
+  status: AssetItemStatus;
+  purchaseDate: string;
+  warrantyEnd: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ApiResponse<T> {
+  success: boolean;
+  message: string;
+  data: T;
+  timestamp: string;
+}
+
 export const getAssetItems = async (assetModelId: number): Promise<AssetItem[]> => {
     const response = await axiosInstance.get(`/asset-items/${assetModelId}`);
     
@@ -60,4 +80,9 @@ export const updateAssetItem = async (id: number, data: UpdateAssetItemDTO): Pro
 
 export const deleteAssetItem = async (id: number): Promise<void> => {
     await axiosInstance.delete(`/asset-items/${id}`);
+}
+
+export const getAssetItemBySerialNumber = async (serialNumber: string): Promise<ApiResponse<AssetItemLookup>> => {
+  const response = await axiosInstance.get(`/asset-items/serial-number/${serialNumber}`);
+  return response.data;
 }
