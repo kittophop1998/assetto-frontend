@@ -14,8 +14,6 @@ import {
   Box,
   InputAdornment,
   Alert,
-  MenuItem,
-  CircularProgress,
 } from '@mui/material';
 import {
   Close as CloseIcon,
@@ -23,7 +21,6 @@ import {
   CameraAlt as CameraAltIcon,
 } from '@mui/icons-material';
 import dynamic from 'next/dynamic';
-import { getDepartment, type Department } from '@/src/services/masterService';
 
 // Dynamic import สำหรับ Scanner เพื่อหลีกเลี่ยง SSR issues
 const BarcodeScannerComponent = dynamic(
@@ -39,19 +36,15 @@ interface RequestModalProps {
 
 export interface RequestFormData {
   serialNumber: string;
-  departmentId: string;
 }
 
 export default function RequestModal({ open, onClose, onSubmit }: RequestModalProps) {
   const serialNumberRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string>('');
   const [showScanner, setShowScanner] = useState(false);
-  const [departments, setDepartments] = useState<Department[]>([]);
-  const [loading, setLoading] = useState(false);
 
   const [formData, setFormData] = useState<RequestFormData>({
     serialNumber: '',
-    departmentId: '',
   });
 
   useEffect(() => {
@@ -59,24 +52,8 @@ export default function RequestModal({ open, onClose, onSubmit }: RequestModalPr
       setTimeout(() => {
         serialNumberRef.current?.focus();
       }, 100);
-      
-      // โหลดข้อมูล departments
-      loadDepartments();
     }
   }, [open]);
-
-  const loadDepartments = async () => {
-    try {
-      setLoading(true);
-      const data = await getDepartment();
-      setDepartments(data);
-    } catch (error) {
-      console.error('Error loading departments:', error);
-      setError('ไม่สามารถโหลดข้อมูลแผนกได้');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleSerialNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -114,11 +91,6 @@ export default function RequestModal({ open, onClose, onSubmit }: RequestModalPr
       return;
     }
 
-    if (!formData.departmentId) {
-      setError('กรุณาเลือกแผนก');
-      return;
-    }
-
     onSubmit(formData);
     handleClose();
   };
@@ -126,7 +98,6 @@ export default function RequestModal({ open, onClose, onSubmit }: RequestModalPr
   const handleClose = () => {
     setFormData({
       serialNumber: '',
-      departmentId: '',
     });
     setError('');
     onClose();
@@ -168,40 +139,6 @@ export default function RequestModal({ open, onClose, onSubmit }: RequestModalPr
                 {error}
               </Alert>
             )}
-
-            {/* Department Dropdown */}
-            <TextField
-              fullWidth
-              required
-              select
-              name="departmentId"
-              label="แผนก"
-              value={formData.departmentId}
-              onChange={(e) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  departmentId: e.target.value,
-                }))
-              }
-              disabled={loading}
-              sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
-              helperText="เลือกแผนกที่ต้องการเบิกสินทรัพย์"
-            >
-              {loading ? (
-                <MenuItem disabled>
-                  <CircularProgress size={20} sx={{ mr: 1 }} />
-                  กำลังโหลด...
-                </MenuItem>
-              ) : departments.length > 0 ? (
-                departments.map((dept) => (
-                  <MenuItem key={dept.id} value={dept.id.toString()}>
-                    {dept.name} ({dept.code})
-                  </MenuItem>
-                ))
-              ) : (
-                <MenuItem disabled>ไม่พบข้อมูลแผนก</MenuItem>
-              )}
-            </TextField>
 
             {/* Serial Number / Barcode Input with Camera Scanner */}
             <Box>

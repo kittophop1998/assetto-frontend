@@ -9,9 +9,32 @@ export interface User {
     department_name: string;
 }
 
+export interface UpdateUserRequest {
+    fullName: string;
+    email: string;
+    departmentId: string;
+}
+
+export interface UserResponse {
+    success: boolean;
+    message: string;
+    data: User;
+    timestamp: string;
+}
+
 class UserService {
     static async getUserList() {
         const response = await axiosInstance.get('/users');
+        return response.data;
+    }
+
+    static async getCurrentUser(): Promise<UserResponse> {
+        const response = await axiosInstance.get('/users/me');
+        return response.data;
+    }
+
+    static async updateUser(data: UpdateUserRequest) {
+        const response = await axiosInstance.put('/users', data);
         return response.data;
     }
 }

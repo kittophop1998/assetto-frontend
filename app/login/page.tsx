@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
 import {
   Box,
@@ -25,6 +25,7 @@ import AuthService from '@/src/services/authService';
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const theme = useTheme();
   const { t } = useTranslation('common');
   const [loading, setLoading] = useState(false);
@@ -64,10 +65,15 @@ export default function LoginPage() {
       setMessageType('success');
       setMessage(response.message || t('auth.loggingIn'));
 
+      const redirectParam = searchParams.get('redirect');
+      const redirectTarget = redirectParam && redirectParam.startsWith('/')
+        ? decodeURIComponent(redirectParam)
+        : '/dashboard';
+
       setTimeout(() => {
         setMessage(t('auth.welcomeUser', { username: formData.username }));
         setTimeout(() => {
-          router.push('/dashboard');
+          router.push(redirectTarget);
         }, 800);
       }, 800);
     } catch (err: unknown) {

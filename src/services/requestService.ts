@@ -20,10 +20,18 @@ export interface AssetRequest {
   returnedDate: string | null;
 }
 
-export interface CreateRequestData {
-  serialNumber: string;
-  departmentId: string;
-}
+export type CreateRequestData =
+  | {
+      serialNumber: string;
+      departmentId?: string;
+    }
+  | {
+      assetId: string;
+      departmentId: string;
+      quantity: number;
+      dateRequest: string;
+      approvedBy: string;
+    };
 
 export interface CreateReturnData {
   serialNumber: string;

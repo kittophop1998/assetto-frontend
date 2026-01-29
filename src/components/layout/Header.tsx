@@ -1,23 +1,20 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   AppBar,
   Toolbar,
   Typography,
   Box,
   IconButton,
-  InputBase,
   Avatar,
   Menu,
   MenuItem,
   Divider,
-  alpha,
   useMediaQuery,
   useTheme,
 } from '@mui/material';
 import {
-  Search as SearchIcon,
   AccountCircle,
   Settings as SettingsIcon,
   Logout as LogoutIcon,
@@ -60,6 +57,11 @@ export default function Header({ title, onMenuClick, onSidebarToggle }: HeaderPr
 
   const handleMenuClose = () => {
     setAnchorEl(null);
+  };
+
+  const handleSettings = () => {
+    router.push('/settings');
+    handleMenuClose();
   };
 
   const handleLogout = () => {
@@ -112,45 +114,6 @@ export default function Header({ title, onMenuClick, onSidebarToggle }: HeaderPr
         </Box>
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.5, sm: 2 } }}>
-          {/* Search */}
-          <Box
-            sx={{
-              position: 'relative',
-              borderRadius: 10,
-              backgroundColor: alpha('#64748B', 0.08),
-              '&:hover': {
-                backgroundColor: alpha('#64748B', 0.12),
-              },
-              width: { xs: 'auto', sm: '300px' },
-              display: { xs: 'none', sm: 'block' },
-            }}
-          >
-            <Box
-              sx={{
-                padding: '0 16px',
-                height: '100%',
-                position: 'absolute',
-                pointerEvents: 'none',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <SearchIcon sx={{ color: 'grey.500', fontSize: 20 }} />
-            </Box>
-            <InputBase
-              placeholder={t('common.search')}
-              sx={{
-                color: 'inherit',
-                width: '100%',
-                '& .MuiInputBase-input': {
-                  padding: '10px 10px 10px 48px',
-                  fontSize: 14,
-                },
-              }}
-            />
-          </Box>
-
           {/* User Menu */}
           <Box
             sx={{
@@ -203,7 +166,7 @@ export default function Header({ title, onMenuClick, onSidebarToggle }: HeaderPr
               <AccountCircle sx={{ mr: 1.5, color: 'primary.main' }} />
               Profile
             </MenuItem>
-            <MenuItem onClick={handleMenuClose}>
+            <MenuItem onClick={handleSettings}>
               <SettingsIcon sx={{ mr: 1.5, color: 'grey.600' }} />
               {t('menu.settings')}
             </MenuItem>

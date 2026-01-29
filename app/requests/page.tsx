@@ -76,7 +76,6 @@ export default function RequestsPage() {
     try {
       const requestData: CreateRequestData = {
         serialNumber: data.serialNumber,
-        departmentId: data.departmentId,
       };
 
       const response = await requestService.createRequest(requestData);
