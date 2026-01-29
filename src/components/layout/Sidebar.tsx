@@ -56,7 +56,7 @@ export default function Sidebar({ open: externalOpen, mobileOpen = false, onMobi
 
     try {
       const parsedUser = JSON.parse(storedUser);
-      return parsedUser?.is_approved == 1;
+      return parsedUser?.is_approved === 1;
     } catch {
       return false;
     }
@@ -98,7 +98,7 @@ export default function Sidebar({ open: externalOpen, mobileOpen = false, onMobi
     // },
   ];
 
-  const menuFiltered = menuItems.filter((item) => item.path !== '/approved' || !isApprovedUser);
+  const menuFiltered = menuItems.filter((item) => item.path !== '/approved' || isApprovedUser);
 
   const handleNavigate = (path: string) => {
     router.push(path);
@@ -151,7 +151,8 @@ export default function Sidebar({ open: externalOpen, mobileOpen = false, onMobi
       <List sx={{ px: 1.5, flex: 1 }}>
         {menuFiltered.map((item) => {
           const isApprovedMenu = item.path === '/approved';
-          const isDisabled = isApprovedMenu && isApprovedUser;
+          const isDisabled = isApprovedMenu && !isApprovedUser;
+          console.log('isDisabled for', item.path, ':', isDisabled);
           const isActive = !isDisabled && (pathname === item.path || pathname?.startsWith(item.path + '/'));
           return (
             <ListItem key={item.path} disablePadding sx={{ mb: 0.5 }}>
