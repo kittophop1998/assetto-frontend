@@ -56,7 +56,7 @@ export default function Sidebar({ open: externalOpen, mobileOpen = false, onMobi
 
     try {
       const parsedUser = JSON.parse(storedUser);
-      return Boolean(parsedUser?.is_approved);
+      return parsedUser?.is_approved == 1;
     } catch {
       return false;
     }
@@ -97,6 +97,8 @@ export default function Sidebar({ open: externalOpen, mobileOpen = false, onMobi
     //   path: '/users',
     // },
   ];
+
+  const menuFiltered = menuItems.filter((item) => item.path !== '/approved' || !isApprovedUser);
 
   const handleNavigate = (path: string) => {
     router.push(path);
@@ -147,7 +149,7 @@ export default function Sidebar({ open: externalOpen, mobileOpen = false, onMobi
 
       {/* Menu Items */}
       <List sx={{ px: 1.5, flex: 1 }}>
-        {menuItems.map((item) => {
+        {menuFiltered.map((item) => {
           const isApprovedMenu = item.path === '/approved';
           const isDisabled = isApprovedMenu && isApprovedUser;
           const isActive = !isDisabled && (pathname === item.path || pathname?.startsWith(item.path + '/'));

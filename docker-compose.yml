@@ -1,0 +1,12 @@
+services:
+  frontend:
+    image: assetto:latest
+    container_name: assetto
+    restart: always
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "127.0.0.1:3002:3002"
+    env_file:
+      - .env.local
