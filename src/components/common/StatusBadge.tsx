@@ -1,11 +1,9 @@
 import { Chip } from '@mui/material';
 
 type Status =
-  | 'Active'
-  | 'In Use'
-  | 'Low Stock'
-  | 'Disposed'
-  | 'Draft'
+  | 'NORMAL'
+  | 'LOW_STOCK'
+  | 'IN_USE'
   | 'Pending'
   | 'Approved'
   | 'Rejected'
@@ -20,11 +18,9 @@ const statusConfig: Record<
   Status,
   { color: 'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning'; label?: string }
 > = {
-  Active: { color: 'success', label: 'Active' },
-  'In Use': { color: 'info', label: 'In Use' },
-  'Low Stock': { color: 'warning', label: 'Low Stock' },
-  Disposed: { color: 'default', label: 'Disposed' },
-  Draft: { color: 'default', label: 'Draft' },
+  NORMAL: { color: 'success', label: 'Normal' },
+  IN_USE: { color: 'info', label: 'In Use' },
+  LOW_STOCK: { color: 'warning', label: 'Low Stock' },
   Pending: { color: 'warning', label: 'Pending' },
   Approved: { color: 'success', label: 'Approved' },
   Rejected: { color: 'error', label: 'Rejected' },

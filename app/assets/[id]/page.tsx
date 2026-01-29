@@ -63,7 +63,6 @@ export default function AssetFormPage() {
     categoryId: 0,
     description: '',
     minimumQty: 0,
-    status: 'ACTIVE',
     departmentId: 0,
   });
 
@@ -126,8 +125,7 @@ export default function AssetFormPage() {
         name: asset.name,
         categoryId: asset.categoryId || asset.category_id || 0,
         description: asset.description || '',
-        minimumQty: asset.minimumQty || asset.minimum_qty || 0,
-        status: asset.status,
+        minimumQty: asset.minimumQty || asset.minimum_qty || 0,        
         departmentId: (() => {
           const deptId = asset.departmentId || asset.department_id;
           return typeof deptId === 'string' ? parseInt(deptId) : (deptId || 0);
@@ -162,7 +160,6 @@ export default function AssetFormPage() {
         categoryId: formData.categoryId,
         description: formData.description,
         minimumQty: formData.minimumQty,
-        status: formData.status,
         departmentId: formData.departmentId,
       };
 
@@ -377,20 +374,6 @@ export default function AssetFormPage() {
                       onChange={handleChange}
                       inputProps={{ min: 0 }}
                     />
-
-                    <TextField
-                      fullWidth
-                      required
-                      select
-                      label="สถานะ"
-                      name="status"
-                      value={formData.status}
-                      onChange={handleChange}
-                    >
-                      <MenuItem value="ACTIVE">Active</MenuItem>
-                      <MenuItem value="IN_USE">In Use</MenuItem>
-                      <MenuItem value="LOW_STOCK">Low Stock</MenuItem>
-                    </TextField>
 
                     <TextField
                       fullWidth

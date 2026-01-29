@@ -143,7 +143,13 @@ export default function RequestsPage() {
     setSnackbar({ ...snackbar, open: false });
   };
 
-  const columns: Column[] = [
+  const requestStatusConfig = {
+    PENDING: { badge: 'Pending' as const, label: 'pending' },
+    APPROVED: { badge: 'Approved' as const, label: 'approved' },
+    REJECTED: { badge: 'Rejected' as const, label: 'rejected' },
+  };
+
+  const columns: Column<AssetRequest>[] = [
     {
       id: 'requestCode',
       label: 'รหัสคำขอ',
@@ -173,7 +179,7 @@ export default function RequestsPage() {
       label: 'วันที่ขอเบิก',
       align: 'center',
       minWidth: 140,
-      format: (value) => new Date(value).toLocaleDateString('th-TH'),
+  format: (value) => new Date(value as string | number | Date).toLocaleDateString('th-TH'),
     },
     {
       id: 'status',
@@ -181,20 +187,11 @@ export default function RequestsPage() {
       align: 'center',
       minWidth: 120,
       format: (value) => {
-        const statusMap = {
-          PENDING: 'Pending' as const,
-          APPROVED: 'Approved' as const,
-          REJECTED: 'Rejected' as const,
-          FULFILLED: 'Approved' as const,
-        };
-        const statusLabels = {
-          PENDING: 'รออนุมัติ',
-          APPROVED: 'อนุมัติแล้ว',
-          REJECTED: 'ไม่อนุมัติ',
-          FULFILLED: 'เบิกแล้ว',
-        };
-        const statusValue = statusMap[value as keyof typeof statusMap];
-        return <StatusBadge status={statusValue} label={statusLabels[value as keyof typeof statusLabels]} />;
+        const config = requestStatusConfig[value as keyof typeof requestStatusConfig];
+        if (!config) {
+          return '-';
+        }
+        return <StatusBadge status={config.badge} label={config.label} />;
       },
     },
     {
@@ -202,7 +199,8 @@ export default function RequestsPage() {
       label: 'วันที่อนุมัติ',
       align: 'center',
       minWidth: 140,
-      format: (value) => value ? new Date(value).toLocaleDateString('th-TH') : '-',
+      format: (value) =>
+        value ? new Date(value as string | number | Date).toLocaleDateString('th-TH') : '-',
     },
   ];
 

@@ -14,17 +14,17 @@ import {
 } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 
-export interface Column {
+export interface Column<RowData extends object = Record<string, unknown>> {
   id: string;
   label: string;
   align?: 'left' | 'center' | 'right';
   minWidth?: number;
-  format?: (value: any, row: any) => React.ReactNode;
+  format?: (value: RowData[keyof RowData] | undefined, row: RowData) => React.ReactNode;
 }
 
-interface DataTableProps {
-  columns: Column[];
-  rows: any[];
+interface DataTableProps<RowData extends object = Record<string, unknown>> {
+  columns: Column<RowData>[];
+  rows: RowData[];
   page?: number;
   rowsPerPage?: number;
   totalRows?: number;
@@ -34,7 +34,7 @@ interface DataTableProps {
   emptyMessage?: string;
 }
 
-export default function DataTable({
+export default function DataTable<RowData extends object>({
   columns,
   rows,
   page = 0,
@@ -44,7 +44,7 @@ export default function DataTable({
   onRowsPerPageChange,
   loading = false,
   emptyMessage,
-}: DataTableProps) {
+}: DataTableProps<RowData>) {
   const { t } = useTranslation('common');
 
   const handleChangePage = (_event: unknown, newPage: number) => {
@@ -93,16 +93,25 @@ export default function DataTable({
               </TableRow>
             ) : (
               rows.map((row, index) => (
-                <TableRow hover key={row.id || index} sx={{ '&:last-child td': { border: 0 } }}>
+                <TableRow
+                  hover
+                  key={(row as { id?: React.Key })?.id ?? index}
+                  sx={{ '&:last-child td': { border: 0 } }}
+                >
                   {columns.map((column) => {
-                    const value = row[column.id];
+                    const value = (row as Record<string, unknown>)[
+                      column.id as string
+                    ] as RowData[keyof RowData] | undefined;
+                    const displayValue = column.format
+                      ? column.format(value, row)
+                      : (value as React.ReactNode);
                     return (
                       <TableCell 
                         key={column.id} 
                         align={column.align || 'left'}
                         sx={{ whiteSpace: 'nowrap' }}
                       >
-                        {column.format ? column.format(value, row) : value}
+                        {displayValue}
                       </TableCell>
                     );
                   })}

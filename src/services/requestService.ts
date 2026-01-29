@@ -97,7 +97,7 @@ export const requestService = {
 
   // Reject request
   rejectRequest: async (code: string, data: { reason: string }): Promise<ApiResponse<string>> => {
-    const response = await axiosInstance.post(`/asset-requests/${code}/reject`, data);
+    const response = await axiosInstance.put(`/${code}/reject`, data);
     return response.data;
   },
 };

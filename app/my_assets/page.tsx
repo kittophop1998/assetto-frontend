@@ -79,14 +79,14 @@ export default function MyAssetsPage() {
         });
     };
 
-    const columns: Column[] = [
+    const columns: Column<AssetRequest>[] = [
         {
             id: 'assetName',
             label: 'ชื่อทรัพย์สิน',
             minWidth: 200,
             format: (value) => (
                 <Box component="span" sx={{ fontWeight: 500 }}>
-                    {value}
+                    {String(value ?? '')}
                 </Box>
             ),
         },
@@ -104,7 +104,7 @@ export default function MyAssetsPage() {
                         color: 'text.secondary',
                     }}
                 >
-                    {value}
+                    {String(value ?? '')}
                 </Box>
             ),
         },
@@ -113,14 +113,14 @@ export default function MyAssetsPage() {
             label: 'วันที่เบิก',
             align: 'center',
             minWidth: 150,
-            format: (value) => formatDate(value),
+            format: (value) => formatDate(value as string | null),
         },
         {
             id: 'returnedDate',
             label: 'วันที่คืน',
             align: 'center',
             minWidth: 150,
-            format: (value) => formatDate(value),
+            format: (value) => formatDate(value as string | null),
         },
         {
             id: 'actions',

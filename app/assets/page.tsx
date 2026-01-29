@@ -88,7 +88,7 @@ export default function AssetsPage() {
     }
   };
 
-  const columns: Column[] = [
+  const columns: Column<Asset>[] = [
     {
       id: 'code',
       label: t('asset.code'),
@@ -102,7 +102,7 @@ export default function AssetsPage() {
             color: 'primary.main',
           }}
         >
-          {value}
+          {String(value ?? '')}
         </Box>
       ),
     },
@@ -112,7 +112,7 @@ export default function AssetsPage() {
       minWidth: 200,
       format: (value) => (
         <Box component="span" sx={{ fontWeight: 500 }}>
-          {value}
+          {String(value ?? '')}
         </Box>
       ),
     },
@@ -126,7 +126,7 @@ export default function AssetsPage() {
       label: t('asset.total'),
       align: 'center',
       minWidth: 100,
-      format: (value) => `${value}`,
+      format: (value) => `${value ?? 0}`,
     },
     {
       id: 'availableQuantity',
@@ -135,7 +135,7 @@ export default function AssetsPage() {
       minWidth: 100,
       format: (value) => (
         <Box component="span" sx={{ fontWeight: 700 }}>
-          {value}
+          {String(value ?? 0)}
         </Box>
       ),
     },
@@ -148,7 +148,9 @@ export default function AssetsPage() {
       id: 'status',
       label: t('asset.status'),
       minWidth: 120,
-      format: (value) => <StatusBadge status={value} />,
+      format: (value) => {
+        return <StatusBadge status={value as 'NORMAL' | 'LOW_STOCK'} />;
+      },
     },
     {
       id: 'actions',
@@ -181,7 +183,7 @@ export default function AssetsPage() {
           <IconButton
             size="small"
             color="error"
-            onClick={() => handleDelete(row.id)}
+            onClick={() => handleDelete(String(row.id))}
             sx={{ minWidth: 'auto' }}
           >
             <DeleteIcon fontSize="small" />

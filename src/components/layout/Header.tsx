@@ -41,7 +41,7 @@ export default function Header({ title, onMenuClick, onSidebarToggle }: HeaderPr
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [user, setUser] = useState<User | null>(() => {
+  const [user] = useState<User | null>(() => {
     if (typeof window !== 'undefined') {
       const userData = localStorage.getItem('user');
       if (userData) {

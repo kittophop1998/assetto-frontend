@@ -36,7 +36,6 @@ export interface AssetFormData {
   categoryId: number;
   description: string;
   minimumQty: number;
-  status: AssetStatusType;
   departmentId: number;
 }
 

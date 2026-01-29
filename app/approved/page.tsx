@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import MainLayout from '@/src/components/layout/MainLayout';
 import DataTable, { Column } from '@/src/components/common/DataTable';
 import StatusBadge from '@/src/components/common/StatusBadge';
@@ -18,7 +17,6 @@ import {
 import {
   CheckCircle as CheckCircleIcon,
   Cancel as CancelIcon,
-  Visibility as VisibilityIcon,
   Refresh as RefreshIcon,
 } from '@mui/icons-material';
 import { requestService, AssetRequest } from '@/src/services/requestService';
@@ -26,7 +24,6 @@ import { useTranslation } from 'react-i18next';
 
 export default function ApprovedPage() {
   const { t } = useTranslation('common');
-  const router = useRouter();
   const [requests, setRequests] = useState<AssetRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [approveModalOpen, setApproveModalOpen] = useState(false);
@@ -77,7 +74,7 @@ export default function ApprovedPage() {
       const response = await requestService.approveRequest(
         selectedRequest.requestCode,
         { serialNumbers: [] },
-        selectedRequest.requestType // ส่ง type จาก request ที่เลือก
+        selectedRequest.requestType
       );
 
       if (response.success) {
@@ -130,11 +127,7 @@ export default function ApprovedPage() {
     }
   };
 
-  const handleView = (id: number) => {
-    router.push(`/requests/${id}`);
-  };
-
-  const columns: Column[] = [
+  const columns: Column<AssetRequest>[] = [
     {
       id: 'requestCode',
       label: t('request.requestNo'),
@@ -166,7 +159,7 @@ export default function ApprovedPage() {
       minWidth: 120,
       format: (value) => {
         if (!value) return '-';
-        return new Date(value).toLocaleDateString('th-TH', {
+        return new Date(value as string).toLocaleDateString('th-TH', {
           year: 'numeric',
           month: 'short',
           day: 'numeric',
@@ -178,14 +171,30 @@ export default function ApprovedPage() {
       label: t('asset.status'),
       align: 'center',
       minWidth: 120,
-      format: (value) => <StatusBadge status={value} />,
+      format: (value) => {
+        const statusMap = {
+          PENDING: 'Pending' as const,
+          APPROVED: 'Approved' as const,
+          REJECTED: 'Rejected' as const,
+          FULFILLED: 'Approved' as const,
+        };
+        const statusLabels = {
+          PENDING: t('request.status.pending'),
+          APPROVED: t('request.status.approved'),
+          REJECTED: t('request.status.rejected'),
+          FULFILLED: t('request.status.fulfilled'),
+        };
+        const statusValue = statusMap[value as keyof typeof statusMap];
+        const statusLabel = statusLabels[value as keyof typeof statusLabels];
+        return <StatusBadge status={statusValue} label={statusLabel} />;
+      },
     },
     {
       id: 'actions',
       label: t('common.actions'),
       align: 'center',
       minWidth: 200,
-      format: (_value, row: AssetRequest) => (
+      format: (_value, row) => (
         <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
           <Tooltip title={t('approve.approve')}>
             <IconButton
@@ -233,7 +242,7 @@ export default function ApprovedPage() {
           <CircularProgress />
         </Box>
       ) : (
-        <DataTable
+        <DataTable<AssetRequest>
           columns={columns}
           rows={requests}
           loading={loading}
