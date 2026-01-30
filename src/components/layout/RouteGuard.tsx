@@ -12,79 +12,80 @@ export default function RouteGuard({ children }: RouteGuardProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [authorized, setAuthorized] = useState(false);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Path ที่ user ที่ไม่ approved ไม่สามารถเข้าได้
     const restrictedPaths = ['/dashboard', '/assets', '/approved', '/requests', '/users', '/settings'];
-
-    // ตรวจสอบ authentication และ authorization
+    
     const checkAuth = () => {
       const token = localStorage.getItem('accessToken');
       const userStr = localStorage.getItem('user');
 
-      // ถ้าไม่มี token และไม่ได้อยู่ที่หน้า login ให้ redirect ไป login
-      if (!token && pathname !== '/login') {
-        router.push(`/login?redirect=${encodeURIComponent(pathname || '/')}`);
-        setLoading(false);
-        return;
-      }
-
-      // ถ้าอยู่หน้า login และมี token แล้ว ให้ redirect ไปหน้าที่เหมาะสม
-      if (token && pathname === '/login') {
-        if (userStr) {
+      // Public path - login page
+      if (pathname === '/login') {
+        if (token && userStr) {
           try {
             const user = JSON.parse(userStr);
-            if (user?.is_approved === 1) {
-              router.push('/dashboard');
-            } else {
-              router.push('/my_assets');
-            }
+            const targetPath = user?.is_approved === 1 ? '/dashboard' : '/my_assets';
+            router.replace(targetPath);
+            return;
           } catch {
-            router.push('/my_assets');
+            router.replace('/my_assets');
+            return;
           }
         }
-        setLoading(false);
+        // No token - show login page
+        setAuthorized(true);
         return;
       }
 
-      // ตรวจสอบ authorization สำหรับ user ที่ไม่ approved
-      if (token && userStr) {
+      // Root path
+      if (pathname === '/') {
+        if (token && userStr) {
+          try {
+            const user = JSON.parse(userStr);
+            const targetPath = user?.is_approved === 1 ? '/dashboard' : '/my_assets';
+            router.replace(targetPath);
+          } catch {
+            router.replace('/my_assets');
+          }
+        } else if (token) {
+          router.replace('/dashboard');
+        } else {
+          router.replace('/login');
+        }
+        return;
+      }
+
+      // Protected paths - require token
+      if (!token) {
+        router.replace(`/login?redirect=${encodeURIComponent(pathname)}`);
+        return;
+      }
+
+      // Check user approval for restricted paths
+      if (userStr) {
         try {
           const user = JSON.parse(userStr);
           const isApproved = user?.is_approved === 1;
+          const isRestrictedPath = restrictedPaths.some(path => pathname.startsWith(path));
 
-          // ถ้าไม่ approved และพยายามเข้าหน้าที่ restricted
-          if (!isApproved && restrictedPaths.some(path => pathname?.startsWith(path))) {
-            router.push('/my_assets');
-            setLoading(false);
+          if (!isApproved && isRestrictedPath) {
+            router.replace('/my_assets');
             return;
           }
-
-          // ถ้าผ่านการตรวจสอบทั้งหมด
-          setAuthorized(true);
-          setLoading(false);
         } catch {
-          // ถ้า parse user ไม่ได้ ให้ไปหน้า my_assets
-          if (pathname !== '/my_assets') {
-            router.push('/my_assets');
-          } else {
-            setAuthorized(true);
-          }
-          setLoading(false);
+          // Silently handle parse errors
         }
-      } else if (token) {
-        // มี token แต่ไม่มี user data
-        setAuthorized(true);
-        setLoading(false);
       }
+
+      // Allow access
+      setAuthorized(true);
     };
 
     checkAuth();
   }, [pathname, router]);
 
-  // แสดง loading state
-  if (loading) {
+  if (!authorized) {
     return (
       <Box
         sx={{
@@ -99,6 +100,5 @@ export default function RouteGuard({ children }: RouteGuardProps) {
     );
   }
 
-  // ถ้า authorized แล้วให้แสดง children
-  return authorized ? <>{children}</> : null;
+  return <>{children}</>;
 }
