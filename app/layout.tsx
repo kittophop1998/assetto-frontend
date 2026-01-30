@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import Providers from "@/app/providers/Providers";
+import RouteGuard from "@/src/components/layout/RouteGuard";
 
 export const metadata: Metadata = {
   title: "AssetFlow - Asset Management System",
@@ -16,7 +17,9 @@ export default function RootLayout({
     <html lang="th">
       <body suppressHydrationWarning>
         <Providers>
-          {children}
+          <RouteGuard>
+            {children}
+          </RouteGuard>
         </Providers>
       </body>
     </html>

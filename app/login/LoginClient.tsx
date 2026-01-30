@@ -65,10 +65,21 @@ export default function LoginClient() {
       setMessageType('success');
       setMessage(response.message || t('auth.loggingIn'));
 
+      // ตรวจสอบสถานะ is_approved เพื่อกำหนด redirect path
+      const user = response.data.user as { is_approved?: number };
+      const isApproved = user?.is_approved === 1;
       const redirectParam = searchParams.get('redirect');
-      const redirectTarget = redirectParam && redirectParam.startsWith('/')
-        ? decodeURIComponent(redirectParam)
-        : '/dashboard';
+      
+      let redirectTarget: string;
+      if (isApproved) {
+        // ถ้า approved ให้ไปตาม redirect หรือ dashboard
+        redirectTarget = redirectParam && redirectParam.startsWith('/')
+          ? decodeURIComponent(redirectParam)
+          : '/dashboard';
+      } else {
+        // ถ้าไม่ approved ให้ไปหน้า my_assets เสมอ
+        redirectTarget = '/my_assets';
+      }
 
       setTimeout(() => {
         setMessage(t('auth.welcomeUser', { username: formData.username }));
