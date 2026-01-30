@@ -23,18 +23,18 @@ interface ReturnModalProps {
   open: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  preSelectedSerialNumber?: string;
-  preSelectedDepartmentId?: number;
+  requestId?: number;
   assetName?: string;
+  serialNumber?: string;
 }
 
 export default function ReturnModal({
   open,
   onClose,
   onSuccess,
-  preSelectedSerialNumber,
-  preSelectedDepartmentId,
+  requestId,
   assetName,
+  serialNumber,
 }: ReturnModalProps) {
   const { t } = useTranslation('common');
   const [loading, setLoading] = useState(false);
@@ -43,7 +43,7 @@ export default function ReturnModal({
   const handleSubmit = async () => {
     setError(null);
 
-    if (!preSelectedSerialNumber || !preSelectedDepartmentId) {
+    if (!requestId) {
       setError('ข้อมูลไม่ครบถ้วน');
       return;
     }
@@ -52,12 +52,12 @@ export default function ReturnModal({
 
     try {
       const returnData: CreateReturnData = {
-        serialNumber: preSelectedSerialNumber,
-        departmentId: preSelectedDepartmentId.toString(),
+        id: requestId,
+        type: 'RETURN',
       };
       
       const response = await requestService.createReturn(returnData);
-      if (response.success) {
+      if (response.serialNumber) {
         handleClose();
         onSuccess();
       }
@@ -173,7 +173,7 @@ export default function ReturnModal({
                 fontWeight={600}
                 sx={{ fontFamily: 'monospace' }}
               >
-                {preSelectedSerialNumber || '-'}
+                {serialNumber || '-'}
               </Typography>
             </Box>
           </Box>

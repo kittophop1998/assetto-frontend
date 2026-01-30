@@ -98,7 +98,7 @@ export default function Sidebar({ open: externalOpen, mobileOpen = false, onMobi
     // },
   ];
 
-  const restrictedPaths = ['/dashboard', '/assets', '/approved'];
+  const restrictedPaths = ['/dashboard', '/assets', '/approved', '/requests'];
   const menuFiltered = menuItems.filter((item) => isApprovedUser || !restrictedPaths.includes(item.path));
 
   const handleNavigate = (path: string) => {

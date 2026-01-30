@@ -1,7 +1,7 @@
 import { RequestStatus } from '@/src/services/requestService';
 import { AssetStatusType } from '@/src/services/assetService';
 
-export type RequestStatusBadge = 'Pending' | 'Approved' | 'Rejected';
+export type RequestStatusBadge = 'Pending' | 'Approved' | 'Rejected' | 'Pending_return';
 export type AssetStatusBadge = 'NORMAL' | 'LOW_STOCK' | 'IN_USE';
 export type StatusBadgeType = RequestStatusBadge | AssetStatusBadge | 'Reviewed';
 
@@ -18,6 +18,7 @@ export const STATUS_BADGE_CONFIG: Record<
   LOW_STOCK: { color: 'warning', label: 'Low Stock' },
   // Request statuses
   Pending: { color: 'warning', label: 'Pending' },
+  Pending_return: { color: 'warning', label: 'Pending Return' },
   Approved: { color: 'success', label: 'Approved' },
   Rejected: { color: 'error', label: 'Rejected' },
   // Other
@@ -28,10 +29,10 @@ export const REQUEST_STATUS_BADGE_MAP: Record<
   RequestStatus,
   { badge: RequestStatusBadge; labelKey: string }
 > = {
-  PENDING: { badge: 'Pending', labelKey: 'request.status.pending' },
-  APPROVED: { badge: 'Approved', labelKey: 'request.status.approved' },
-  REJECTED: { badge: 'Rejected', labelKey: 'request.status.rejected' },
-  FULFILLED: { badge: 'Approved', labelKey: 'request.status.fulfilled' },
+  PENDING: { badge: 'Pending', labelKey: 'status.request.pending' },
+  PENDING_RETURN: { badge: 'Pending_return', labelKey: 'status.request.pending_return' },
+  APPROVED: { badge: 'Approved', labelKey: 'status.request.approved' },
+  REJECTED: { badge: 'Rejected', labelKey: 'status.request.rejected' },
 };
 
 // Asset status badge mapping for StatusBadge component

@@ -5,11 +5,9 @@ import { useRouter } from 'next/navigation';
 import MainLayout from '@/src/components/layout/MainLayout';
 import DataTable, { Column } from '@/src/components/common/DataTable';
 import StatusBadge from '@/src/components/common/StatusBadge';
-import RequestModal, { RequestFormData } from '@/src/components/requests/RequestModal';
 import {
   Box,
   Paper,
-  Button,
   Menu,
   MenuItem,
   ListItemIcon,
@@ -19,13 +17,12 @@ import {
   CircularProgress,
 } from '@mui/material';
 import {
-  Add as AddIcon,
   Visibility as VisibilityIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
   CheckCircle as CheckCircleIcon,
 } from '@mui/icons-material';
-import { requestService, AssetRequest, CreateRequestData } from '@/src/services/requestService';
+import { requestService, AssetRequest } from '@/src/services/requestService';
 import { REQUEST_STATUS_BADGE_MAP } from '@/src/constants/status';
 import { useTranslation } from 'react-i18next';
 
@@ -36,7 +33,6 @@ export default function RequestsPage() {
   const [loading, setLoading] = useState(true);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedRequest, setSelectedRequest] = useState<number | null>(null);
-  const [modalOpen, setModalOpen] = useState(false);
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: '',
@@ -52,8 +48,8 @@ export default function RequestsPage() {
       setLoading(true);
       const response = await requestService.getRequests();
       if (response.success) {
-        const dataFiltered = response.data.filter(req => req.requestType === 'REQUEST');
-        setRequests(dataFiltered);
+        // แสดงทั้ง REQUEST และ RETURN
+        setRequests(response.data);
       }
     } catch (error) {
       console.error('Error loading requests:', error);
@@ -64,40 +60,6 @@ export default function RequestsPage() {
       });
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleOpenModal = () => {
-    setModalOpen(true);
-  };
-
-  const handleCloseModal = () => {
-    setModalOpen(false);
-  };
-
-  const handleSubmitRequest = async (data: RequestFormData) => {
-    try {
-      const requestData: CreateRequestData = {
-        serialNumber: data.serialNumber,
-      };
-
-      const response = await requestService.createRequest(requestData);
-
-      if (response.success) {
-        setSnackbar({
-          open: true,
-          message: 'บันทึกรายการขอเบิกเรียบร้อยแล้ว',
-          severity: 'success',
-        });
-        loadRequests();
-      }
-    } catch (error) {
-      console.error('Error submitting request:', error);
-      setSnackbar({
-        open: true,
-        message: 'ไม่สามารถบันทึกรายการขอเบิกได้',
-        severity: 'error',
-      });
     }
   };
 
@@ -154,6 +116,28 @@ export default function RequestsPage() {
       minWidth: 120,
     },
     {
+      id: 'requestType',
+      label: 'ประเภท',
+      align: 'center',
+      minWidth: 100,
+      format: (value) => (
+        <Box
+          component="span"
+          sx={{
+            px: 1.5,
+            py: 0.5,
+            borderRadius: 1,
+            fontSize: '0.75rem',
+            fontWeight: 600,
+            bgcolor: value === 'REQUEST' ? 'primary.light' : 'warning.light',
+            color: value === 'REQUEST' ? 'primary.main' : 'warning.main',
+          }}
+        >
+          {value === 'REQUEST' ? 'ขอเบิก' : 'คืน'}
+        </Box>
+      ),
+    },
+    {
       id: 'assetName',
       label: 'ชื่อสินทรัพย์',
       align: 'left',
@@ -205,35 +189,8 @@ export default function RequestsPage() {
     <MainLayout title="รายการขอเบิก">
       <Box sx={{ mb: { xs: 2, sm: 3 }, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexDirection: { xs: 'column', sm: 'row' }, gap: 2 }}>
         <Box>
-          <Box sx={{ typography: { xs: 'h6', sm: 'h5' }, fontWeight: 700, mb: 0.5 }}>รายการขอเบิกอุปกรณ์</Box>
-          <Box sx={{ typography: 'body2', color: 'text.secondary', display: { xs: 'none', sm: 'block' } }}>จัดการและติดตามรายการขอเบิกอุปกรณ์ทั้งหมดในระบบ</Box>
-        </Box>
-      </Box>
-
-      {/** Toolbar */}
-      <Box
-        sx={{
-          mb: { xs: 2, sm: 3 },
-          display: 'flex',
-          gap: { xs: 1, sm: 2 },
-          flexWrap: 'wrap',
-          justifyContent: 'flex-end',
-          alignItems: 'center',
-        }}
-      >
-        <Box sx={{ display: 'flex', gap: { xs: 1, sm: 2 } }}>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={handleOpenModal}
-            sx={{
-              borderRadius: 2,
-              boxShadow: 2,
-              '&:hover': { boxShadow: 4 },
-            }}
-          >
-            เพิ่มรายการขอเบิก
-          </Button>
+          <Box sx={{ typography: { xs: 'h6', sm: 'h5' }, fontWeight: 700, mb: 0.5 }}>รายการขอเบิกและคืนอุปกรณ์</Box>
+          <Box sx={{ typography: 'body2', color: 'text.secondary', display: { xs: 'none', sm: 'block' } }}>จัดการและติดตามรายการขอเบิกและคืนอุปกรณ์ทั้งหมดในระบบ</Box>
         </Box>
       </Box>
 
@@ -312,13 +269,6 @@ export default function RequestsPage() {
           {snackbar.message}
         </Alert>
       </Snackbar>
-
-      {/* Request Modal */}
-      <RequestModal
-        open={modalOpen}
-        onClose={handleCloseModal}
-        onSubmit={handleSubmitRequest}
-      />
     </MainLayout>
   );
 }

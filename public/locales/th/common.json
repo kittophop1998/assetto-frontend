@@ -186,6 +186,12 @@
     "asset": {
       "normal": "ปกติ",
       "lowStock": "สินค้าคงคลังต่ำ"
+    },
+    "request":{
+      "approved":"อนุมัติแล้ว",
+      "rejected":"ไม่อนุมัติ",
+      "pending":"รออนุมัติ",
+      "pending_return": "รอคืน"
     }
   }
 }

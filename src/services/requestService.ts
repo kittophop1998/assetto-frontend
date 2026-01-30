@@ -1,6 +1,6 @@
 import axiosInstance from "../utils/axios";
 
-export type RequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'FULFILLED';
+export type RequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'PENDING_RETURN';
 export type RequestType = 'REQUEST' | 'RETURN';
 
 export interface AssetRequest {
@@ -34,8 +34,12 @@ export type CreateRequestData =
     };
 
 export interface CreateReturnData {
+  id: number;
+  type: 'RETURN';
+}
+
+export interface ReturnResponse {
   serialNumber: string;
-  departmentId: string;
 }
 
 export interface ApiResponse<T> {
@@ -71,8 +75,8 @@ export const requestService = {
   },
 
   // Create return request (คืน)
-  createReturn: async (data: CreateReturnData): Promise<ApiResponse<string>> => {
-    const response = await axiosInstance.post('/asset-requests?type=RETURN', data);
+  createReturn: async (data: CreateReturnData): Promise<ReturnResponse> => {
+    const response = await axiosInstance.get(`/asset-requests/return?id=${data.id}&type=${data.type}`);
     return response.data;
   },
 
