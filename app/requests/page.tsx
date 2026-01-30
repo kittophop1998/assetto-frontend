@@ -26,8 +26,11 @@ import {
   CheckCircle as CheckCircleIcon,
 } from '@mui/icons-material';
 import { requestService, AssetRequest, CreateRequestData } from '@/src/services/requestService';
+import { REQUEST_STATUS_BADGE_MAP } from '@/src/constants/status';
+import { useTranslation } from 'react-i18next';
 
 export default function RequestsPage() {
+  const { t } = useTranslation('common');
   const router = useRouter();
   const [requests, setRequests] = useState<AssetRequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -143,12 +146,6 @@ export default function RequestsPage() {
     setSnackbar({ ...snackbar, open: false });
   };
 
-  const requestStatusConfig = {
-    PENDING: { badge: 'Pending' as const, label: 'pending' },
-    APPROVED: { badge: 'Approved' as const, label: 'approved' },
-    REJECTED: { badge: 'Rejected' as const, label: 'rejected' },
-  };
-
   const columns: Column<AssetRequest>[] = [
     {
       id: 'requestCode',
@@ -187,11 +184,11 @@ export default function RequestsPage() {
       align: 'center',
       minWidth: 120,
       format: (value) => {
-        const config = requestStatusConfig[value as keyof typeof requestStatusConfig];
+        const config = REQUEST_STATUS_BADGE_MAP[value as keyof typeof REQUEST_STATUS_BADGE_MAP];
         if (!config) {
           return '-';
         }
-        return <StatusBadge status={config.badge} label={config.label} />;
+        return <StatusBadge status={config.badge} label={t(config.labelKey)} />;
       },
     },
     {

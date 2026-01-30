@@ -1,6 +1,6 @@
 import axiosInstance from "../utils/axios";
 
-export type AssetStatusType = 'ACTIVE' | 'INACTIVE' | 'IN_USE' | 'LOW_STOCK';
+export type AssetStatusType = 'NORMAL' | 'LOW_STOCK';
 
 export interface Asset {
   id: string | number;

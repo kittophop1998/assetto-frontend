@@ -25,6 +25,7 @@ import DataTable, { Column } from '@/src/components/common/DataTable';
 import StatusBadge from '@/src/components/common/StatusBadge';
 import MainLayout from '@/src/components/layout/MainLayout';
 import AssetService, { Asset } from '@/src/services/assetService';
+import { ASSET_STATUS_BADGE_MAP } from '@/src/constants/status';
 
 export default function AssetsPage() {
   const { t } = useTranslation('common');
@@ -149,7 +150,9 @@ export default function AssetsPage() {
       label: t('asset.status'),
       minWidth: 120,
       format: (value) => {
-        return <StatusBadge status={value as 'NORMAL' | 'LOW_STOCK'} />;
+        const config = ASSET_STATUS_BADGE_MAP[value as keyof typeof ASSET_STATUS_BADGE_MAP];
+        if (!config) return '-';
+        return <StatusBadge status={config.badge} label={config.labelKey ? t(config.labelKey) : undefined} />;
       },
     },
     {

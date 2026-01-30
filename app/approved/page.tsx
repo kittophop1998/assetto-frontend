@@ -5,6 +5,7 @@ import MainLayout from '@/src/components/layout/MainLayout';
 import DataTable, { Column } from '@/src/components/common/DataTable';
 import StatusBadge from '@/src/components/common/StatusBadge';
 import ApproveModal from '@/src/components/approved/ApproveModal';
+import RejectModal from '@/src/components/approved/RejectModal';
 import {
   Box,
   Button,
@@ -20,6 +21,7 @@ import {
   Refresh as RefreshIcon,
 } from '@mui/icons-material';
 import { requestService, AssetRequest } from '@/src/services/requestService';
+import { REQUEST_STATUS_BADGE_MAP } from '@/src/constants/status';
 import { useTranslation } from 'react-i18next';
 
 export default function ApprovedPage() {
@@ -27,6 +29,7 @@ export default function ApprovedPage() {
   const [requests, setRequests] = useState<AssetRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [approveModalOpen, setApproveModalOpen] = useState(false);
+  const [rejectModalOpen, setRejectModalOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<AssetRequest | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [snackbar, setSnackbar] = useState({
@@ -73,7 +76,6 @@ export default function ApprovedPage() {
       setSubmitting(true);
       const response = await requestService.approveRequest(
         selectedRequest.requestCode,
-        { serialNumbers: [] },
         selectedRequest.requestType
       );
 
@@ -100,20 +102,25 @@ export default function ApprovedPage() {
     }
   };
 
-  const handleReject = async (request: AssetRequest) => {
-    if (!confirm(t('approve.confirmReject'))) return;
+  const handleRejectClick = (request: AssetRequest) => {
+    setSelectedRequest(request);
+    setRejectModalOpen(true);
+  };
+
+  const handleRejectSubmit = async () => {
+    if (!selectedRequest) return;
 
     try {
-      const response = await requestService.rejectRequest(request.requestCode, {
-        reason: 'Rejected by admin',
-      });
-
+      setSubmitting(true);
+      const response = await requestService.rejectRequest(selectedRequest.requestCode);
       if (response.success) {
         setSnackbar({
           open: true,
           message: t('approve.rejectSuccessMessage'),
           severity: 'success',
         });
+        setRejectModalOpen(false);
+        setSelectedRequest(null);
         loadRequests();
       }
     } catch (error) {
@@ -124,6 +131,8 @@ export default function ApprovedPage() {
         message: errorMessage,
         severity: 'error',
       });
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -172,21 +181,9 @@ export default function ApprovedPage() {
       align: 'center',
       minWidth: 120,
       format: (value) => {
-        const statusMap = {
-          PENDING: 'Pending' as const,
-          APPROVED: 'Approved' as const,
-          REJECTED: 'Rejected' as const,
-          FULFILLED: 'Approved' as const,
-        };
-        const statusLabels = {
-          PENDING: t('request.status.pending'),
-          APPROVED: t('request.status.approved'),
-          REJECTED: t('request.status.rejected'),
-          FULFILLED: t('request.status.fulfilled'),
-        };
-        const statusValue = statusMap[value as keyof typeof statusMap];
-        const statusLabel = statusLabels[value as keyof typeof statusLabels];
-        return <StatusBadge status={statusValue} label={statusLabel} />;
+        const config = REQUEST_STATUS_BADGE_MAP[value as keyof typeof REQUEST_STATUS_BADGE_MAP];
+        if (!config) return '-';
+        return <StatusBadge status={config.badge} label={t(config.labelKey)} />;
       },
     },
     {
@@ -209,7 +206,7 @@ export default function ApprovedPage() {
             <IconButton
               size="small"
               color="error"
-              onClick={() => handleReject(row)}
+              onClick={() => handleRejectClick(row)}
             >
               <CancelIcon fontSize="small" />
             </IconButton>
@@ -257,6 +254,17 @@ export default function ApprovedPage() {
           setSelectedRequest(null);
         }}
         onSubmit={handleApproveSubmit}
+        request={selectedRequest}
+        loading={submitting}
+      />
+
+      <RejectModal
+        open={rejectModalOpen}
+        onClose={() => {
+          setRejectModalOpen(false);
+          setSelectedRequest(null);
+        }}
+        onSubmit={handleRejectSubmit}
         request={selectedRequest}
         loading={submitting}
       />

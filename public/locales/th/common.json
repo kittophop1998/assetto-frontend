@@ -111,13 +111,19 @@
     "title": "อนุมัติคำขอ",
     "approve": "อนุมัติ",
     "reject": "ปฏิเสธ",
+    "rejectTitle": "ปฏิเสธคำขอ",
     "description": "รายการคำขอทรัพย์สินที่รออนุมัติ กรุณากรอกหมายเลข Serial Number (SN) สำหรับแต่ละรายการ",
     "serialNumbers": "หมายเลข Serial Number (SN)",
     "serialNumberPlaceholder": "กรอกหมายเลข SN (เช่น SN20240001)",
     "addSerialNumber": "เพิ่ม SN",
     "confirm": "ยืนยันการอนุมัติ",
     "approving": "กำลังอนุมัติ...",
-    "confirmReject": "คุณแน่ใจหรือไม่ที่จะปฏิเสธคำขอนี้?",
+    "confirmApprovalMessage": "คุณแน่ใจหรือไม่ที่จะอนุมัติคำขอนี้?",
+    "confirmReject": "ยืนยันการปฏิเสธ",
+    "confirmRejectMessage": "คุณแน่ใจหรือไม่ที่จะปฏิเสธคำขอนี้? การกระทำนี้ไม่สามารถยกเลิกได้",
+    "rejecting": "กำลังปฏิเสธ...",
+    "rejectReason": "เหตุผลในการปฏิเสธ",
+    "rejectReasonPlaceholder": "กรุณาระบุเหตุผลในการปฏิเสธคำขอนี้...",
     "successMessage": "อนุมัติคำขอเรียบร้อยแล้ว",
     "errorMessage": "เกิดข้อผิดพลาดในการอนุมัติคำขอ",
     "rejectSuccessMessage": "ปฏิเสธคำขอเรียบร้อยแล้ว",
@@ -127,8 +133,7 @@
     "errorNoSerialNumber": "กรุณากรอกหมายเลข Serial Number อย่างน้อย 1 รายการ",
     "errorSerialNumberCount": "จำนวน Serial Number ต้องตรงกับจำนวนที่ขอ ({{required}} รายการ)",
     "errorDuplicateSerialNumber": "พบหมายเลข Serial Number ซ้ำกัน กรุณาตรวจสอบอีกครั้ง",
-    "hint": "กรุณากรอกหมายเลข Serial Number ทั้งหมด {{count}} รายการ",
-    "confirmApprovalMessage":"คุณแน่ใจหรือไม่ที่จะอนุมัติคำขอนี้?"
+    "hint": "กรุณากรอกหมายเลข Serial Number ทั้งหมด {{count}} รายการ"
   },
   "department": {
     "title": "แผนก/สาขา",
@@ -176,5 +181,11 @@
     "warning": "คำเตือน",
     "info": "ข้อมูล",
     "showingResults": "แสดง {{from}} ถึง {{to}} จาก {{total}} รายการ"
+  },
+  "status": {
+    "asset": {
+      "normal": "ปกติ",
+      "lowStock": "สินค้าคงคลังต่ำ"
+    }
   }
 }

@@ -88,16 +88,13 @@ export const requestService = {
     return response.data;
   },
 
-  // Approve request with serial numbers
-  approveRequest: async (code: string, data: { serialNumbers: string[] }, type?: RequestType): Promise<ApiResponse<string>> => {
-    const url = type ? `/asset-requests/${code}/approve?type=${type}` : `/asset-requests/${code}/approve`;
-    const response = await axiosInstance.put(url, data);
+  approveRequest: async (code: string, type: RequestType): Promise<ApiResponse<string>> => {
+    const response = await axiosInstance.put(`/asset-requests/${code}/approve?type=${type}`);
     return response.data;
   },
 
-  // Reject request
-  rejectRequest: async (code: string, data: { reason: string }): Promise<ApiResponse<string>> => {
-    const response = await axiosInstance.put(`/${code}/reject`, data);
+  rejectRequest: async (code: string): Promise<ApiResponse<string>> => {
+    const response = await axiosInstance.put(`/asset-requests/${code}/reject`);
     return response.data;
-  },
+  }
 };
