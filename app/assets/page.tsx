@@ -200,7 +200,7 @@ export default function AssetsPage() {
     <MainLayout title={t('asset.title')}>
       <Box sx={{ mb: { xs: 2, sm: 3 }, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexDirection: { xs: 'column', sm: 'row' }, gap: 2 }}>
         <Box>
-          <Box sx={{ typography: { xs: 'h6', sm: 'h5' }, fontWeight: 700, mb: 0.5 }}>{t('asset.list')}</Box>
+          <Box sx={{ typography: { xs: 'h6', sm: 'h5' }, fontWeight: 700, mb: 0.5 }}>{t('asset.title')}</Box>
           <Box sx={{ typography: 'body2', color: 'text.secondary', display: { xs: 'none', sm: 'block' } }}>จัดการทรัพย์สินทั้งหมดในระบบ</Box>
         </Box>
       </Box>
@@ -233,7 +233,7 @@ export default function AssetsPage() {
             }}
             sx={{ width: { xs: '100%', sm: 300 } }}
           />
-          <Button
+          {/* <Button
             variant="outlined"
             startIcon={<FilterIcon />}
             onClick={(e) => setAnchorEl(e.currentTarget)}
@@ -241,7 +241,7 @@ export default function AssetsPage() {
             sx={{ display: { xs: 'none', sm: 'flex' } }}
           >
             {t('common.filter')}
-          </Button>
+          </Button> */}
           <IconButton
             color="primary"
             onClick={(e) => setAnchorEl(e.currentTarget)}
@@ -260,6 +260,7 @@ export default function AssetsPage() {
         <Box sx={{ display: 'flex', gap: { xs: 1, sm: 2 } }}>
           <Button
             variant="outlined"
+            disabled
             startIcon={<FileDownloadIcon sx={{ display: { xs: 'none', sm: 'block' } }} />}
             onClick={handleExport}
             size="small"
