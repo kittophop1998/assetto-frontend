@@ -21,8 +21,14 @@ import {
   QrCodeScanner as QrCodeScannerIcon,
   CameraAlt as CameraAltIcon,
 } from '@mui/icons-material';
-import { BrowserMultiFormatReader } from '@zxing/browser';
+import dynamic from 'next/dynamic';
 import { getAssetItemBySerialNumber, AssetItemLookup } from '@/src/services/assetItemService';
+
+// Dynamic import to avoid SSR issues
+const BarcodeScannerComponent = dynamic(
+  () => import('react-qr-barcode-scanner'),
+  { ssr: false }
+);
 
 interface RequestModalProps {
   open: boolean;
@@ -36,13 +42,12 @@ export interface RequestFormData {
 
 export default function RequestModal({ open, onClose, onSubmit }: RequestModalProps) {
   const serialNumberRef = useRef<HTMLInputElement>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const codeReaderRef = useRef<BrowserMultiFormatReader | null>(null);
   const [error, setError] = useState<string>('');
   const [showScanner, setShowScanner] = useState(false);
   const [assetDetail, setAssetDetail] = useState<AssetItemLookup | null>(null);
   const [assetLoading, setAssetLoading] = useState(false);
   const [assetError, setAssetError] = useState('');
+  const [scannerError, setScannerError] = useState<string>('');
 
   const [formData, setFormData] = useState<RequestFormData>({
     serialNumber: '',
@@ -103,56 +108,6 @@ export default function RequestModal({ open, onClose, onSubmit }: RequestModalPr
     }
   };
 
-  // Start scanner when dialog opens
-  useEffect(() => {
-    const startScanner = async () => {
-      if (showScanner && videoRef.current) {
-        try {
-          const codeReader = new BrowserMultiFormatReader();
-          codeReaderRef.current = codeReader;
-
-          // Get available video devices
-          const videoInputDevices = await BrowserMultiFormatReader.listVideoInputDevices();
-
-          if (videoInputDevices.length === 0) {
-            console.error('No video input devices found');
-            setAssetError('ไม่พบกล้องในอุปกรณ์นี้');
-            return;
-          }
-
-          // Use the first available camera (usually back camera on mobile)
-          const firstDeviceId = videoInputDevices[0].deviceId;
-
-          await codeReader.decodeFromVideoDevice(
-            firstDeviceId,
-            videoRef.current,
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (result: any) => {
-              if (result) {
-                const scannedText = result.getText();
-                setFormData((prev) => ({
-                  ...prev,
-                  serialNumber: scannedText,
-                }));
-                setShowScanner(false);
-                fetchAssetDetail(scannedText);
-              }
-            }
-          );
-        } catch (err) {
-          console.error('Failed to start scanner:', err);
-          setAssetError('ไม่สามารถเปิดกล้องได้ กรุณาตรวจสอบการอนุญาตใช้งานกล้อง');
-        }
-      }
-    };
-
-    startScanner();
-
-    return () => {
-      codeReaderRef.current = null;
-    };
-  }, [showScanner]);
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -173,6 +128,32 @@ export default function RequestModal({ open, onClose, onSubmit }: RequestModalPr
     setAssetDetail(null);
     setAssetError('');
     onClose();
+  };
+
+  const handleCloseScanner = () => {
+    setShowScanner(false);
+    setScannerError('');
+  };
+
+  const handleScanSuccess = (text: string) => {
+    console.log('Scanned successfully:', text);
+    setFormData((prev) => ({
+      ...prev,
+      serialNumber: text,
+    }));
+    setShowScanner(false);
+    fetchAssetDetail(text);
+  };
+
+  const handleScanError = (error: unknown) => {
+    console.error('Scan error:', error);
+    // Don't show error for normal "not found" cases
+    if (error && typeof error === 'object' && 'message' in error) {
+      const errorMessage = (error as { message: string }).message;
+      if (!errorMessage.includes('No MultiFormat Readers')) {
+        setScannerError('เกิดข้อผิดพลาดในการสแกน');
+      }
+    }
   };
 
   const statusLabels: Record<string, string> = {
@@ -373,7 +354,7 @@ export default function RequestModal({ open, onClose, onSubmit }: RequestModalPr
       {/* Camera Scanner Dialog - Moved outside main Dialog */}
       <Dialog
         open={showScanner}
-        onClose={() => setShowScanner(false)}
+        onClose={handleCloseScanner}
         maxWidth="sm"
         fullWidth
       >
@@ -385,43 +366,67 @@ export default function RequestModal({ open, onClose, onSubmit }: RequestModalPr
           }}
         >
           สแกน Barcode/QR Code
-          <IconButton onClick={() => setShowScanner(false)} size="small">
+          <IconButton 
+            onClick={handleCloseScanner} 
+            size="small"
+          >
             <CloseIcon />
           </IconButton>
         </DialogTitle>
         <DialogContent>
-          <Box
-            sx={{
-              position: 'relative',
-              width: '100%',
-              minHeight: 300,
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              bgcolor: 'black',
-              borderRadius: 2,
-              overflow: 'hidden',
-            }}
-          >
-            <video
-              ref={videoRef}
-              style={{
+          <Stack spacing={2}>
+            {/* Scanner Error Alert */}
+            {scannerError && (
+              <Alert severity="warning" onClose={() => setScannerError('')}>
+                {scannerError}
+              </Alert>
+            )}
+
+            {/* Barcode Scanner */}
+            <Box
+              sx={{
+                position: 'relative',
                 width: '100%',
-                height: '100%',
-                objectFit: 'cover',
+                minHeight: 400,
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                bgcolor: 'black',
+                borderRadius: 2,
+                overflow: 'hidden',
               }}
-            />
-          </Box>
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            sx={{ mt: 2, textAlign: 'center' }}
-          >
-            จัดกล้องให้ตรงกับ Barcode หรือ QR Code
-          </Typography>
+            >
+              {showScanner && (
+                <BarcodeScannerComponent
+                  width="100%"
+                  height={400}
+                  onUpdate={(err, result) => {
+                    if (result) {
+                      handleScanSuccess(result.getText());
+                    }
+                    if (err) {
+                      handleScanError(err);
+                    }
+                  }}
+                />
+              )}
+            </Box>
+
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ textAlign: 'center' }}
+            >
+              จัดกล้องให้ตรงกับ Barcode หรือ QR Code
+            </Typography>
+          </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setShowScanner(false)}>ปิด</Button>
+          <Button 
+            onClick={handleCloseScanner}
+          >
+            ปิด
+          </Button>
         </DialogActions>
       </Dialog>
     </>
