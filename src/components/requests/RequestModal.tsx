@@ -21,14 +21,8 @@ import {
   QrCodeScanner as QrCodeScannerIcon,
   CameraAlt as CameraAltIcon,
 } from '@mui/icons-material';
-import dynamic from 'next/dynamic';
+import { useZxing } from 'react-zxing';
 import { getAssetItemBySerialNumber, AssetItemLookup } from '@/src/services/assetItemService';
-
-// Dynamic import to avoid SSR issues
-const BarcodeScannerComponent = dynamic(
-  () => import('react-qr-barcode-scanner'),
-  { ssr: false }
-);
 
 interface RequestModalProps {
   open: boolean;
@@ -38,6 +32,47 @@ interface RequestModalProps {
 
 export interface RequestFormData {
   serialNumber: string;
+}
+
+// Scanner Component with useZxing hook
+interface BarcodeScannerProps {
+  onScanSuccess: (text: string) => void;
+  onScanError: (error: string) => void;
+}
+
+function BarcodeScanner({ onScanSuccess, onScanError }: BarcodeScannerProps) {
+  const { ref } = useZxing({
+    onDecodeResult(result) {
+      const scannedText = result.getText();
+      console.log('Scanned successfully:', scannedText);
+      onScanSuccess(scannedText);
+    },
+    onDecodeError(error) {
+      console.log('Decode error (normal):', error);
+      // Don't show error for normal decode failures (when no barcode in frame)
+    },
+    onError(error) {
+      console.error('Camera error:', error);
+      onScanError('ไม่สามารถเข้าถึงกล้องได้ กรุณาอนุญาตการใช้งานกล้อง');
+    },
+    constraints: {
+      video: {
+        facingMode: 'environment', // Use back camera on mobile
+      },
+      audio: false,
+    },
+  });
+
+  return (
+    <video
+      ref={ref}
+      style={{
+        width: '100%',
+        height: '400px',
+        objectFit: 'cover',
+      }}
+    />
+  );
 }
 
 export default function RequestModal({ open, onClose, onSubmit }: RequestModalProps) {
@@ -142,18 +177,12 @@ export default function RequestModal({ open, onClose, onSubmit }: RequestModalPr
       serialNumber: text,
     }));
     setShowScanner(false);
+    setScannerError('');
     fetchAssetDetail(text);
   };
 
-  const handleScanError = (error: unknown) => {
-    console.error('Scan error:', error);
-    // Don't show error for normal "not found" cases
-    if (error && typeof error === 'object' && 'message' in error) {
-      const errorMessage = (error as { message: string }).message;
-      if (!errorMessage.includes('No MultiFormat Readers')) {
-        setScannerError('เกิดข้อผิดพลาดในการสแกน');
-      }
-    }
+  const handleScanErrorCallback = (error: string) => {
+    setScannerError(error);
   };
 
   const statusLabels: Record<string, string> = {
@@ -366,8 +395,8 @@ export default function RequestModal({ open, onClose, onSubmit }: RequestModalPr
           }}
         >
           สแกน Barcode/QR Code
-          <IconButton 
-            onClick={handleCloseScanner} 
+          <IconButton
+            onClick={handleCloseScanner}
             size="small"
           >
             <CloseIcon />
@@ -397,17 +426,9 @@ export default function RequestModal({ open, onClose, onSubmit }: RequestModalPr
               }}
             >
               {showScanner && (
-                <BarcodeScannerComponent
-                  width="100%"
-                  height={400}
-                  onUpdate={(err, result) => {
-                    if (result) {
-                      handleScanSuccess(result.getText());
-                    }
-                    if (err) {
-                      handleScanError(err);
-                    }
-                  }}
+                <BarcodeScanner
+                  onScanSuccess={handleScanSuccess}
+                  onScanError={handleScanErrorCallback}
                 />
               )}
             </Box>
@@ -422,7 +443,7 @@ export default function RequestModal({ open, onClose, onSubmit }: RequestModalPr
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button 
+          <Button
             onClick={handleCloseScanner}
           >
             ปิด
