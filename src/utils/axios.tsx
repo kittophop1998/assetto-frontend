@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const axiosInstance = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8083/api/v1',
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://assetto-backend:8083/api/v1',
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
