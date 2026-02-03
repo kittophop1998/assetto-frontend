@@ -49,7 +49,7 @@ RUN chown -R nextjs:nodejs /app
 # Switch to non-root user
 USER nextjs
 
-# Expose port
+# Expose port 3004
 EXPOSE 3004
 
 # Start the application
