@@ -116,6 +116,12 @@ export default function RequestsPage() {
       minWidth: 120,
     },
     {
+      id: 'requesterName',
+      label: 'ผู้ขอเบิก',
+      align: 'center',
+      minWidth: 70,
+    },
+    {
       id: 'requestType',
       label: 'ประเภท',
       align: 'center',
@@ -130,7 +136,7 @@ export default function RequestsPage() {
             fontSize: '0.75rem',
             fontWeight: 600,
             bgcolor: value === 'REQUEST' ? 'primary.light' : 'warning.light',
-            color: value === 'REQUEST' ? 'primary.main' : 'warning.main',
+            color: 'white',
           }}
         >
           {value === 'REQUEST' ? 'ขอเบิก' : 'คืน'}

@@ -165,15 +165,6 @@ export default function AssetsPage() {
           <IconButton
             size="small"
             color="primary"
-            onClick={() => router.push(`/assets/${row.id}`)}
-            sx={{ minWidth: 'auto' }}
-            title="ดูรายละเอียด"
-          >
-            <VisibilityIcon fontSize="small" />
-          </IconButton>
-          <IconButton
-            size="small"
-            color="primary"
             onClick={() => {
               sessionStorage.setItem('editAssetData', JSON.stringify(row));
               router.push(`/assets/${row.id}`);

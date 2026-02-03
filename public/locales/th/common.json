@@ -53,7 +53,8 @@
     "available": "คงเหลือ",
     "department": "แผนกเจ้าของ",
     "status": "สถานะ",
-    "serialNumber": "หมายเลข SN"
+    "serialNumber": "หมายเลข SN",
+    "requesterName": "ชื่อผู้ขอเบิก"
   },
   "request": {
     "title": "เบิกทรัพย์สิน",

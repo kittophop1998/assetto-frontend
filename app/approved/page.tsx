@@ -143,6 +143,11 @@ export default function ApprovedPage() {
       minWidth: 120,
     },
     {
+      id: 'requesterName',
+      label: t('asset.requesterName'),
+      minWidth: 150,
+    },
+    {
       id: 'assetName',
       label: t('asset.name'),
       minWidth: 200,

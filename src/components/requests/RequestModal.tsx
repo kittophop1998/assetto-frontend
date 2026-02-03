@@ -21,14 +21,8 @@ import {
   QrCodeScanner as QrCodeScannerIcon,
   CameraAlt as CameraAltIcon,
 } from '@mui/icons-material';
-import dynamic from 'next/dynamic';
+import { BrowserMultiFormatReader } from '@zxing/browser';
 import { getAssetItemBySerialNumber, AssetItemLookup } from '@/src/services/assetItemService';
-
-// Dynamic import สำหรับ Scanner เพื่อหลีกเลี่ยง SSR issues
-const BarcodeScannerComponent = dynamic(
-  () => import('react-qr-barcode-scanner'),
-  { ssr: false }
-);
 
 interface RequestModalProps {
   open: boolean;
@@ -42,6 +36,8 @@ export interface RequestFormData {
 
 export default function RequestModal({ open, onClose, onSubmit }: RequestModalProps) {
   const serialNumberRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const codeReaderRef = useRef<BrowserMultiFormatReader | null>(null);
   const [error, setError] = useState<string>('');
   const [showScanner, setShowScanner] = useState(false);
   const [assetDetail, setAssetDetail] = useState<AssetItemLookup | null>(null);
@@ -59,6 +55,9 @@ export default function RequestModal({ open, onClose, onSubmit }: RequestModalPr
       }, 100);
       setAssetDetail(null);
       setAssetError('');
+      setFormData({
+        serialNumber: '',
+      });
     }
   }, [open]);
 
@@ -79,19 +78,6 @@ export default function RequestModal({ open, onClose, onSubmit }: RequestModalPr
     }
   };
 
-  const handleScanSuccess = (result: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      serialNumber: result,
-    }));
-    setShowScanner(false);
-    fetchAssetDetail(result);
-  };
-
-  const handleScanError = (error: Error) => {
-    console.error('Scan error:', error);
-  };
-
   const fetchAssetDetail = async (serialNumber: string) => {
     if (!serialNumber?.trim()) {
       setAssetDetail(null);
@@ -102,7 +88,7 @@ export default function RequestModal({ open, onClose, onSubmit }: RequestModalPr
       setAssetLoading(true);
       setAssetError('');
       const response = await getAssetItemBySerialNumber(serialNumber.trim());
-      if (response.success) {
+      if (response.success && response.data) {
         setAssetDetail(response.data);
       } else {
         setAssetDetail(null);
@@ -117,9 +103,59 @@ export default function RequestModal({ open, onClose, onSubmit }: RequestModalPr
     }
   };
 
+  // Start scanner when dialog opens
+  useEffect(() => {
+    const startScanner = async () => {
+      if (showScanner && videoRef.current) {
+        try {
+          const codeReader = new BrowserMultiFormatReader();
+          codeReaderRef.current = codeReader;
+
+          // Get available video devices
+          const videoInputDevices = await BrowserMultiFormatReader.listVideoInputDevices();
+
+          if (videoInputDevices.length === 0) {
+            console.error('No video input devices found');
+            setAssetError('ไม่พบกล้องในอุปกรณ์นี้');
+            return;
+          }
+
+          // Use the first available camera (usually back camera on mobile)
+          const firstDeviceId = videoInputDevices[0].deviceId;
+
+          await codeReader.decodeFromVideoDevice(
+            firstDeviceId,
+            videoRef.current,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (result: any) => {
+              if (result) {
+                const scannedText = result.getText();
+                setFormData((prev) => ({
+                  ...prev,
+                  serialNumber: scannedText,
+                }));
+                setShowScanner(false);
+                fetchAssetDetail(scannedText);
+              }
+            }
+          );
+        } catch (err) {
+          console.error('Failed to start scanner:', err);
+          setAssetError('ไม่สามารถเปิดกล้องได้ กรุณาตรวจสอบการอนุญาตใช้งานกล้อง');
+        }
+      }
+    };
+
+    startScanner();
+
+    return () => {
+      codeReaderRef.current = null;
+    };
+  }, [showScanner]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.serialNumber) {
       setError('กรุณากรอกหมายเลข Serial Number');
       return;
@@ -147,253 +183,247 @@ export default function RequestModal({ open, onClose, onSubmit }: RequestModalPr
   };
 
   return (
-    <Dialog 
-      open={open} 
-      onClose={handleClose} 
-      maxWidth="sm" 
-      fullWidth
-      PaperProps={{
-        sx: {
-          borderRadius: 3,
-        },
-      }}
-    >
-      <DialogTitle
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          pb: 2,
+    <>
+      <Dialog
+        open={open}
+        onClose={handleClose}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+          },
         }}
       >
-        <Typography variant="h6" fontWeight={600}>
+        <DialogTitle
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            pb: 2,
+          }}
+        >
           เพิ่มรายการขอเบิก
-        </Typography>
-        <IconButton onClick={handleClose} size="small">
-          <CloseIcon />
-        </IconButton>
-      </DialogTitle>
+          <IconButton onClick={handleClose} size="small">
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
 
-      <form onSubmit={handleSubmit}>
-        <DialogContent dividers sx={{ py: 3 }}>
-          <Stack spacing={3}>
-            {error && (
-              <Alert severity="error" onClose={() => setError('')}>
-                {error}
-              </Alert>
-            )}
+        <form onSubmit={handleSubmit}>
+          <DialogContent dividers sx={{ py: 3 }}>
+            <Stack spacing={3}>
+              {error && (
+                <Alert severity="error" onClose={() => setError('')}>
+                  {error}
+                </Alert>
+              )}
 
-            {/* Serial Number / Barcode Input with Camera Scanner */}
-            <Box>
-              <Stack direction="row" spacing={1} alignItems="flex-start">
-                <TextField
-                  fullWidth
-                  required
-                  inputRef={serialNumberRef}
-                  name="serialNumber"
-                  label="หมายเลข SN (Serial Number)"
-                  placeholder="สแกน Barcode หรือกรอกหมายเลข SN"
-                  value={formData.serialNumber}
-                  onChange={handleSerialNumberChange}
-                  onKeyDown={handleSerialNumberKeyDown}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <QrCodeScannerIcon sx={{ color: 'text.secondary' }} />
-                      </InputAdornment>
-                    ),
-                  }}
-                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
-                  helperText="สามารถสแกน Barcode หรือกรอกด้วยมือได้"
-                />
-                <IconButton
-                  color="primary"
-                  onClick={() => setShowScanner(true)}
-                  sx={{
-                    mt: 0.5,
-                    bgcolor: 'primary.main',
-                    color: 'white',
-                    '&:hover': {
-                      bgcolor: 'primary.dark',
-                    },
-                  }}
-                >
-                  <CameraAltIcon />
-                </IconButton>
-              </Stack>
-            </Box>
-
-            {assetLoading && (
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, px: 1 }}>
-                <CircularProgress size={20} />
-                <Typography variant="body2" color="text.secondary">
-                  กำลังตรวจสอบข้อมูลสินทรัพย์...
-                </Typography>
-              </Box>
-            )}
-
-            {assetError && !assetLoading && (
-              <Alert severity="warning" onClose={() => setAssetError('')}>
-                {assetError}
-              </Alert>
-            )}
-
-            {assetDetail && !assetLoading && (
-              <Box
-                sx={{
-                  borderRadius: 2,
-                  border: '1px solid',
-                  borderColor: 'divider',
-                  p: 2,
-                  bgcolor: 'background.default',
-                }}
-              >
-                <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 1 }}>
-                  รายละเอียดสินทรัพย์
-                </Typography>
-                <Stack spacing={1}>
-                  <Box>
-                    <Typography variant="body2" color="text.secondary">
-                      ชื่อสินทรัพย์
-                    </Typography>
-                    <Typography variant="body1" fontWeight={500}>
-                      {assetDetail.assetName}
-                    </Typography>
-                  </Box>
-                  <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                    <Box>
-                      <Typography variant="body2" color="text.secondary">
-                        Asset Code
-                      </Typography>
-                      <Typography variant="body1" fontWeight={500}>
-                        {assetDetail.assetCodeAC}
-                      </Typography>
-                    </Box>
-                    <Box>
-                      <Typography variant="body2" color="text.secondary">
-                        Serial Number
-                      </Typography>
-                      <Typography variant="body1" fontWeight={500}>
-                        {assetDetail.serialNumber}
-                      </Typography>
-                    </Box>
-                    <Box>
-                      <Typography variant="body2" color="text.secondary">
-                        สถานะ
-                      </Typography>
-                      <Typography variant="body1" fontWeight={500}>
-                        {statusLabels[assetDetail.status] ?? assetDetail.status}
-                      </Typography>
-                    </Box>
-                  </Stack>
-                  <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                    <Box>
-                      <Typography variant="body2" color="text.secondary">
-                        วันที่ซื้อ
-                      </Typography>
-                      <Typography variant="body1" fontWeight={500}>
-                        {new Date(assetDetail.purchaseDate).toLocaleDateString('th-TH')}
-                      </Typography>
-                    </Box>
-                    <Box>
-                      <Typography variant="body2" color="text.secondary">
-                        หมดประกัน
-                      </Typography>
-                      <Typography variant="body1" fontWeight={500}>
-                        {new Date(assetDetail.warrantyEnd).toLocaleDateString('th-TH')}
-                      </Typography>
-                    </Box>
-                  </Stack>
-                </Stack>
-              </Box>
-            )}
-
-            {/* Camera Scanner Dialog */}
-            {showScanner && (
-              <Dialog
-                open={showScanner}
-                onClose={() => setShowScanner(false)}
-                maxWidth="sm"
-                fullWidth
-              >
-                <DialogTitle
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                  }}
-                >
-                  <Typography variant="h6" fontWeight={600}>
-                    สแกน Barcode/QR Code
-                  </Typography>
-                  <IconButton onClick={() => setShowScanner(false)} size="small">
-                    <CloseIcon />
-                  </IconButton>
-                </DialogTitle>
-                <DialogContent>
-                  <Box
+              {/* Serial Number / Barcode Input with Camera Scanner */}
+              <Box>
+                <Stack direction="row" spacing={1} alignItems="flex-start">
+                  <TextField
+                    fullWidth
+                    required
+                    inputRef={serialNumberRef}
+                    name="serialNumber"
+                    label="หมายเลข SN (Serial Number)"
+                    placeholder="สแกน Barcode หรือกรอกหมายเลข SN"
+                    value={formData.serialNumber}
+                    onChange={handleSerialNumberChange}
+                    onKeyDown={handleSerialNumberKeyDown}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <QrCodeScannerIcon sx={{ color: 'text.secondary' }} />
+                        </InputAdornment>
+                      ),
+                    }}
+                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+                    helperText="สามารถสแกน Barcode หรือกรอกด้วยมือได้"
+                  />
+                  <IconButton
+                    color="primary"
+                    onClick={() => setShowScanner(true)}
                     sx={{
-                      position: 'relative',
-                      width: '100%',
-                      minHeight: 300,
-                      display: 'flex',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      bgcolor: 'black',
-                      borderRadius: 2,
+                      mt: 0.5,
+                      bgcolor: 'primary.main',
+                      color: 'white',
+                      '&:hover': {
+                        bgcolor: 'primary.dark',
+                      },
                     }}
                   >
-                    <BarcodeScannerComponent
-                      width={500}
-                      height={500}
-                      onUpdate={(err, result) => {
-                        if (result) {
-                          handleScanSuccess(result.getText());
-                        }
-                        if (err) {
-                          handleScanError(err as Error);
-                        }
-                      }}
-                    />
-                  </Box>
-                  <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    sx={{ mt: 2, textAlign: 'center' }}
-                  >
-                    จัดกล้องให้ตรงกับ Barcode หรือ QR Code
-                  </Typography>
-                </DialogContent>
-                <DialogActions>
-                  <Button onClick={() => setShowScanner(false)}>ปิด</Button>
-                </DialogActions>
-              </Dialog>
-            )}
-          </Stack>
-        </DialogContent>
+                    <CameraAltIcon />
+                  </IconButton>
+                </Stack>
+              </Box>
 
-        <DialogActions sx={{ px: 3, py: 2 }}>
-          <Button 
-            onClick={handleClose} 
-            variant="text" 
-            sx={{ borderRadius: 2 }}
-          >
-            ยกเลิก
-          </Button>
-          <Button
-            type="submit"
-            variant="contained"
-            sx={{ 
-              borderRadius: 2, 
-              px: 3,
-              boxShadow: 2,
-              '&:hover': { boxShadow: 4 },
+              {assetLoading && (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, px: 1 }}>
+                  <CircularProgress size={20} />
+                  <Typography variant="body2" color="text.secondary">
+                    กำลังตรวจสอบข้อมูลสินทรัพย์...
+                  </Typography>
+                </Box>
+              )}
+
+              {assetError && !assetLoading && (
+                <Alert severity="warning" onClose={() => setAssetError('')}>
+                  {assetError}
+                </Alert>
+              )}
+
+              {assetDetail && !assetLoading && (
+                <Box
+                  sx={{
+                    borderRadius: 2,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    p: 2,
+                    bgcolor: 'background.default',
+                  }}
+                >
+                  <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 1 }}>
+                    รายละเอียดสินทรัพย์
+                  </Typography>
+                  <Stack spacing={1}>
+                    <Box>
+                      <Typography variant="body2" color="text.secondary">
+                        ชื่อสินทรัพย์
+                      </Typography>
+                      <Typography variant="body1" fontWeight={500}>
+                        {assetDetail.assetName}
+                      </Typography>
+                    </Box>
+                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                      <Box>
+                        <Typography variant="body2" color="text.secondary">
+                          Asset Code
+                        </Typography>
+                        <Typography variant="body1" fontWeight={500}>
+                          {assetDetail.assetCodeAC}
+                        </Typography>
+                      </Box>
+                      <Box>
+                        <Typography variant="body2" color="text.secondary">
+                          Serial Number
+                        </Typography>
+                        <Typography variant="body1" fontWeight={500}>
+                          {assetDetail.serialNumber}
+                        </Typography>
+                      </Box>
+                      <Box>
+                        <Typography variant="body2" color="text.secondary">
+                          สถานะ
+                        </Typography>
+                        <Typography variant="body1" fontWeight={500}>
+                          {statusLabels[assetDetail.status] ?? assetDetail.status}
+                        </Typography>
+                      </Box>
+                    </Stack>
+                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                      <Box>
+                        <Typography variant="body2" color="text.secondary">
+                          วันที่ซื้อ
+                        </Typography>
+                        <Typography variant="body1" fontWeight={500}>
+                          {new Date(assetDetail.purchaseDate).toLocaleDateString('th-TH')}
+                        </Typography>
+                      </Box>
+                      <Box>
+                        <Typography variant="body2" color="text.secondary">
+                          หมดประกัน
+                        </Typography>
+                        <Typography variant="body1" fontWeight={500}>
+                          {new Date(assetDetail.warrantyEnd).toLocaleDateString('th-TH')}
+                        </Typography>
+                      </Box>
+                    </Stack>
+                  </Stack>
+                </Box>
+              )}
+            </Stack>
+          </DialogContent>
+
+          <DialogActions sx={{ px: 3, py: 2 }}>
+            <Button
+              onClick={handleClose}
+              variant="text"
+              sx={{ borderRadius: 2 }}
+            >
+              ยกเลิก
+            </Button>
+            <Button
+              type="submit"
+              variant="contained"
+              disabled={!assetDetail || assetLoading}
+              sx={{
+                borderRadius: 2,
+                px: 3,
+                boxShadow: 2,
+                '&:hover': { boxShadow: 4 },
+              }}
+            >
+              บันทึกรายการ
+            </Button>
+          </DialogActions>
+        </form>
+      </Dialog>
+
+      {/* Camera Scanner Dialog - Moved outside main Dialog */}
+      <Dialog
+        open={showScanner}
+        onClose={() => setShowScanner(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          สแกน Barcode/QR Code
+          <IconButton onClick={() => setShowScanner(false)} size="small">
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent>
+          <Box
+            sx={{
+              position: 'relative',
+              width: '100%',
+              minHeight: 300,
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              bgcolor: 'black',
+              borderRadius: 2,
+              overflow: 'hidden',
             }}
           >
-            บันทึกรายการ
-          </Button>
+            <video
+              ref={videoRef}
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+              }}
+            />
+          </Box>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ mt: 2, textAlign: 'center' }}
+          >
+            จัดกล้องให้ตรงกับ Barcode หรือ QR Code
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowScanner(false)}>ปิด</Button>
         </DialogActions>
-      </form>
-    </Dialog>
+      </Dialog>
+    </>
   );
 }
