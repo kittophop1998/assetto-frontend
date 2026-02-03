@@ -9,4 +9,4 @@ services:
     ports:
       - "127.0.0.1:3004:3004"
     env_file:
-      - .env.local
+      - .env
