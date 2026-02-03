@@ -10,3 +10,4 @@ services:
       - "127.0.0.1:3004:3004"
     environment:
       - PORT=3004
+      - NEXT_PUBLIC_API_URL=https://asseto-backend.up.railway.app/api/v1
