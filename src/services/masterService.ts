@@ -12,6 +12,7 @@ export interface Category {
   id: number;
   name: string;
   description?: string;
+  prefix?: string;
 }
 
 export interface MasterDataResponse {

@@ -21,6 +21,7 @@ export interface UpdateAssetItemDTO {
 export interface AssetItem {
   id: number;
   assetModelId: number;
+  assetCode: string;
   assetCodeAC: string;
   serialNumber: string;
   status: AssetItemStatus;

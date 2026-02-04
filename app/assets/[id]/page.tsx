@@ -51,6 +51,7 @@ export default function AssetFormPage() {
   const [openModal, setOpenModal] = useState(false);
   const [editingEquipment, setEditingEquipment] = useState<AssetItem | null>(null);
   const [equipmentForm, setEquipmentForm] = useState({
+    assetCode: '',
     assetCodeAC: '',
     serialNumber: '',
     purchaseDate: '',
@@ -131,9 +132,13 @@ export default function AssetFormPage() {
           return typeof deptId === 'string' ? parseInt(deptId) : (deptId || 0);
         })(),
       });
+      
+      // Store asset detail for later use (e.g., lastCodeAssetItem)
+      return asset;
     } catch (error) {
       console.error('Failed to load asset:', error);
       alert('ไม่สามารถโหลดข้อมูลสินทรัพย์ได้');
+      return null;
     } finally {
       setLoadingAsset(false);
     }
@@ -180,9 +185,21 @@ export default function AssetFormPage() {
     }
   };
 
-  const handleOpenModal = () => {
+  const handleOpenModal = async () => {
     setEditingEquipment(null);
+    
+    // Get lastCodeAssetItem from API
+    let assetCode = '';
+    
+    try {
+      const asset = await AssetService.getAssetById(params.id as string);
+      assetCode = asset.lastCodeAssetItem || '';
+    } catch (error) {
+      console.error('Failed to load asset code:', error);
+    }
+    
     setEquipmentForm({
+      assetCode: assetCode,
       assetCodeAC: '',
       serialNumber: '',
       purchaseDate: '',
@@ -195,6 +212,7 @@ export default function AssetFormPage() {
     setOpenModal(false);
     setEditingEquipment(null);
     setEquipmentForm({
+      assetCode: '',
       assetCodeAC: '',
       serialNumber: '',
       purchaseDate: '',
@@ -260,6 +278,7 @@ export default function AssetFormPage() {
   const handleEditEquipment = (equipment: AssetItem) => {
     setEditingEquipment(equipment);
     setEquipmentForm({
+      assetCode: '', // Not used when editing
       assetCodeAC: equipment.assetCodeAC || '',
       serialNumber: equipment.serialNumber,
       purchaseDate: equipment.purchaseDate,
@@ -435,6 +454,7 @@ export default function AssetFormPage() {
                       <TableHead>
                         <TableRow sx={{ bgcolor: 'grey.50' }}>
                           <TableCell sx={{ fontWeight: 600 }}>ลำดับ</TableCell>
+                          <TableCell sx={{ fontWeight: 600 }}>รหัสสินทรัพย์</TableCell>
                           <TableCell sx={{ fontWeight: 600 }}>เลข Asset จากบัญชี</TableCell>
                           <TableCell sx={{ fontWeight: 600 }}>เลข Serial Number</TableCell>
                           <TableCell sx={{ fontWeight: 600 }}>วันที่จัดซื้อ</TableCell>
@@ -454,6 +474,7 @@ export default function AssetFormPage() {
                           equipments.map((equipment, index) => (
                             <TableRow key={equipment.id} hover>
                               <TableCell>{index + 1}</TableCell>
+                              <TableCell>{equipment.assetCode}</TableCell>
                               <TableCell>{equipment.assetCodeAC}</TableCell>
                               <TableCell>{equipment.serialNumber}</TableCell>
                               <TableCell>{equipment.purchaseDate}</TableCell>
@@ -499,6 +520,18 @@ export default function AssetFormPage() {
             </DialogTitle>
             <DialogContent>
               <Box sx={{ pt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {/* Asset Code - Disabled field, auto-generated */}
+                {!editingEquipment && (
+                  <TextField
+                    fullWidth
+                    required
+                    disabled
+                    label="รหัสสินทรัพย์"
+                    value={equipmentForm.assetCode}
+                    helperText="รหัสนี้ถูกสร้างอัตโนมัติจากระบบ"
+                  />
+                )}
+
                 <TextField
                   fullWidth
                   required
@@ -506,7 +539,7 @@ export default function AssetFormPage() {
                   value={equipmentForm.assetCodeAC}
                   onChange={(e) => setEquipmentForm(prev => ({ ...prev, assetCodeAC: e.target.value }))}
                   placeholder="กรอกเลข Asset จากบัญชี"
-                  autoFocus
+                  autoFocus={!editingEquipment}
                 />
 
                 <TextField
@@ -516,6 +549,7 @@ export default function AssetFormPage() {
                   value={equipmentForm.serialNumber}
                   onChange={(e) => setEquipmentForm(prev => ({ ...prev, serialNumber: e.target.value }))}
                   placeholder="กรอกเลข Serial Number"
+                  autoFocus={editingEquipment !== null}
                 />
 
                 <TextField

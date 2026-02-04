@@ -24,6 +24,7 @@ export interface Asset {
   minimum_qty: number;
   minimumQty?: number;
   status: AssetStatusType;
+  lastCodeAssetItem?: string;
   created_at?: string;
   createdAt?: string;
   updated_at?: string;
