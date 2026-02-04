@@ -110,6 +110,53 @@ export default function RequestsPage() {
 
   const columns: Column<AssetRequest>[] = [
     {
+      id: 'imageUrl',
+      label: 'รูปภาพ',
+      align: 'center',
+      minWidth: 100,
+      format: (value) => (
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+        >
+          {value ? (
+            <Box
+              component="img"
+              src={value as string}
+              alt="Asset"
+              sx={{
+                width: 60,
+                height: 60,
+                objectFit: 'cover',
+                borderRadius: 2,
+                border: '1px solid',
+                borderColor: 'divider',
+              }}
+            />
+          ) : (
+            <Box
+              sx={{
+                width: 60,
+                height: 60,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                bgcolor: 'grey.200',
+                borderRadius: 2,
+                fontSize: '0.75rem',
+                color: 'text.secondary',
+              }}
+            >
+              ไม่มีรูป
+            </Box>
+          )}
+        </Box>
+      ),
+    },
+    {
       id: 'requestCode',
       label: 'รหัสคำขอ',
       align: 'center',
@@ -166,7 +213,7 @@ export default function RequestsPage() {
       label: 'วันที่ขอเบิก',
       align: 'center',
       minWidth: 140,
-  format: (value) => new Date(value as string | number | Date).toLocaleDateString('th-TH'),
+      format: (value) => new Date(value as string | number | Date).toLocaleDateString('th-TH'),
     },
     {
       id: 'status',
