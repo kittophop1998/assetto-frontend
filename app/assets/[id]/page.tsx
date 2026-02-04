@@ -243,7 +243,6 @@ export default function AssetFormPage() {
 
     try {
       if (editingEquipment) {
-        // Update existing item
         const updated = await updateAssetItem(editingEquipment.id, {
           assetCodeAC: equipmentForm.assetCodeAC,
           serialNumber: equipmentForm.serialNumber,
@@ -255,17 +254,16 @@ export default function AssetFormPage() {
           eq.id === editingEquipment.id ? updated : eq
         ));
       } else {
-        // Create new item
         const createData: CreateAssetItemDTO = {
           assetId: Number(params.id),
           assetCodeAC: equipmentForm.assetCodeAC,
+          assetCode: equipmentForm.assetCode,
           serialNumber: equipmentForm.serialNumber,
           purchaseDate: equipmentForm.purchaseDate,
           warrantyEnd: equipmentForm.warrantyEnd,
         };
 
         await createAssetItem(createData);
-        // Reload the equipments list to show the newly created item
         await loadEquipments();
       }
       handleCloseModal();

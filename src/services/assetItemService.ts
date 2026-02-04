@@ -5,6 +5,7 @@ export type AssetItemStatus = 'AVAILABLE' | 'IN_USE' | 'MAINTENANCE' | 'DISPOSED
 export interface CreateAssetItemDTO {
   assetId: number;
   assetCodeAC: string;
+  assetCode: string;
   serialNumber: string;
   purchaseDate?: string;
   warrantyEnd?: string;
@@ -71,7 +72,7 @@ export const getAssetItemById = async (id: number): Promise<AssetItem> => {
 
 export const createAssetItem = async (data: CreateAssetItemDTO): Promise<string> => {
     const response = await axiosInstance.post('/asset-items', data);
-    return response.data.data; // Returns success message string
+    return response.data.data;
 };
 
 export const updateAssetItem = async (id: number, data: UpdateAssetItemDTO): Promise<AssetItem> => {
