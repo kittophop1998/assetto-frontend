@@ -24,6 +24,7 @@ import {
 } from '@mui/icons-material';
 import { useZxing } from 'react-zxing';
 import jsQR from 'jsqr';
+import { BrowserMultiFormatReader, NotFoundException } from '@zxing/library';
 import { getAssetItemBySerialNumber, AssetItemLookup } from '@/src/services/assetItemService';
 
 interface RequestModalProps {
@@ -193,13 +194,11 @@ export default function RequestModal({ open, onClose, onSubmit }: RequestModalPr
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Validate file type
     if (!file.type.startsWith('image/')) {
       setUploadError('กรุณาเลือกไฟล์รูปภาพเท่านั้น');
       return;
     }
 
-    // Validate file size (max 10MB)
     if (file.size > 10 * 1024 * 1024) {
       setUploadError('ไฟล์มีขนาดใหญ่เกิน 10MB');
       return;
@@ -212,12 +211,11 @@ export default function RequestModal({ open, onClose, onSubmit }: RequestModalPr
       const image = new Image();
       const reader = new FileReader();
 
-      reader.onload = (e) => {
-        image.onload = () => {
-          // Create canvas to extract image data
+      reader.onload = async (e) => {
+        image.onload = async () => {
           const canvas = document.createElement('canvas');
           const context = canvas.getContext('2d');
-          
+
           if (!context) {
             setUploadError('ไม่สามารถประมวลผลรูปภาพได้');
             setAssetLoading(false);
@@ -228,23 +226,58 @@ export default function RequestModal({ open, onClose, onSubmit }: RequestModalPr
           canvas.height = image.height;
           context.drawImage(image, 0, 0);
 
-          // Get image data
+          let detectedCode: string | null = null;
+
+          // First, try jsQR for QR codes (faster for QR codes)
           const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
 
-          // Try to decode QR code
-          const code = jsQR(imageData.data, imageData.width, imageData.height, {
-            inversionAttempts: 'dontInvert',
+          // Try multiple inversion attempts for QR code detection
+          let qrCode = jsQR(imageData.data, imageData.width, imageData.height, {
+            inversionAttempts: 'attemptBoth',
           });
 
-          if (code) {
-            console.log('QR Code detected from image:', code.data);
+          if (!qrCode) {
+            qrCode = jsQR(imageData.data, imageData.width, imageData.height, {
+              inversionAttempts: 'invertFirst',
+            });
+          }
+
+          if (!qrCode) {
+            qrCode = jsQR(imageData.data, imageData.width, imageData.height, {
+              inversionAttempts: 'dontInvert',
+            });
+          }
+
+          if (qrCode) {
+            detectedCode = qrCode.data;
+            console.log('QR Code detected:', detectedCode);
+          }
+
+          if (!detectedCode) {
+            try {
+              const codeReader = new BrowserMultiFormatReader();
+              const result = await codeReader.decodeFromImageElement(image);
+              detectedCode = result.getText();
+              console.log('Barcode detected:', detectedCode);
+            } catch (error) {
+              if (error instanceof NotFoundException) {
+                console.log('No barcode found with ZXing');
+              } else {
+                console.error('ZXing error:', error);
+              }
+            }
+          }
+
+          if (detectedCode) {
+            console.log('Code successfully detected:', detectedCode);
             setFormData((prev) => ({
               ...prev,
-              serialNumber: code.data,
+              serialNumber: detectedCode,
             }));
-            fetchAssetDetail(code.data);
+            setUploadError('');
+            fetchAssetDetail(detectedCode);
           } else {
-            setUploadError('ไม่พบ QR Code หรือ Barcode ในรูปภาพ');
+            setUploadError('ไม่พบ QR Code หรือ Barcode ในรูปภาพ กรุณาตรวจสอบว่ารูปภาพชัดเจนและมี QR Code/Barcode อยู่');
             setAssetLoading(false);
           }
         };
