@@ -20,8 +20,10 @@ import {
   Close as CloseIcon,
   QrCodeScanner as QrCodeScannerIcon,
   CameraAlt as CameraAltIcon,
+  Upload as UploadIcon,
 } from '@mui/icons-material';
 import { useZxing } from 'react-zxing';
+import jsQR from 'jsqr';
 import { getAssetItemBySerialNumber, AssetItemLookup } from '@/src/services/assetItemService';
 
 interface RequestModalProps {
@@ -77,12 +79,14 @@ function BarcodeScanner({ onScanSuccess, onScanError }: BarcodeScannerProps) {
 
 export default function RequestModal({ open, onClose, onSubmit }: RequestModalProps) {
   const serialNumberRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string>('');
   const [showScanner, setShowScanner] = useState(false);
   const [assetDetail, setAssetDetail] = useState<AssetItemLookup | null>(null);
   const [assetLoading, setAssetLoading] = useState(false);
   const [assetError, setAssetError] = useState('');
   const [scannerError, setScannerError] = useState<string>('');
+  const [uploadError, setUploadError] = useState<string>('');
 
   const [formData, setFormData] = useState<RequestFormData>({
     serialNumber: '',
@@ -185,6 +189,87 @@ export default function RequestModal({ open, onClose, onSubmit }: RequestModalPr
     setScannerError(error);
   };
 
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setUploadError('กรุณาเลือกไฟล์รูปภาพเท่านั้น');
+      return;
+    }
+
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      setUploadError('ไฟล์มีขนาดใหญ่เกิน 10MB');
+      return;
+    }
+
+    setUploadError('');
+    setAssetLoading(true);
+
+    try {
+      const image = new Image();
+      const reader = new FileReader();
+
+      reader.onload = (e) => {
+        image.onload = () => {
+          // Create canvas to extract image data
+          const canvas = document.createElement('canvas');
+          const context = canvas.getContext('2d');
+          
+          if (!context) {
+            setUploadError('ไม่สามารถประมวลผลรูปภาพได้');
+            setAssetLoading(false);
+            return;
+          }
+
+          canvas.width = image.width;
+          canvas.height = image.height;
+          context.drawImage(image, 0, 0);
+
+          // Get image data
+          const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+
+          // Try to decode QR code
+          const code = jsQR(imageData.data, imageData.width, imageData.height, {
+            inversionAttempts: 'dontInvert',
+          });
+
+          if (code) {
+            console.log('QR Code detected from image:', code.data);
+            setFormData((prev) => ({
+              ...prev,
+              serialNumber: code.data,
+            }));
+            fetchAssetDetail(code.data);
+          } else {
+            setUploadError('ไม่พบ QR Code หรือ Barcode ในรูปภาพ');
+            setAssetLoading(false);
+          }
+        };
+
+        image.src = e.target?.result as string;
+      };
+
+      reader.onerror = () => {
+        setUploadError('ไม่สามารถอ่านไฟล์ได้');
+        setAssetLoading(false);
+      };
+
+      reader.readAsDataURL(file);
+    } catch (err) {
+      console.error('Error processing image:', err);
+      setUploadError('เกิดข้อผิดพลาดในการประมวลผลรูปภาพ');
+      setAssetLoading(false);
+    }
+
+    // Clear file input
+    if (event.target) {
+      event.target.value = '';
+    }
+  };
+
   const statusLabels: Record<string, string> = {
     AVAILABLE: 'พร้อมใช้งาน',
     IN_USE: 'กำลังใช้งาน',
@@ -265,8 +350,35 @@ export default function RequestModal({ open, onClose, onSubmit }: RequestModalPr
                   >
                     <CameraAltIcon />
                   </IconButton>
+                  <IconButton
+                    color="secondary"
+                    component="label"
+                    sx={{
+                      mt: 0.5,
+                      bgcolor: 'secondary.main',
+                      color: 'white',
+                      '&:hover': {
+                        bgcolor: 'secondary.dark',
+                      },
+                    }}
+                  >
+                    <UploadIcon />
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      hidden
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                    />
+                  </IconButton>
                 </Stack>
               </Box>
+
+              {uploadError && (
+                <Alert severity="error" onClose={() => setUploadError('')}>
+                  {uploadError}
+                </Alert>
+              )}
 
               {assetLoading && (
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, px: 1 }}>
