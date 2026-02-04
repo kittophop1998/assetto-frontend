@@ -136,7 +136,13 @@
     "errorNoSerialNumber": "Please enter at least one Serial Number",
     "errorSerialNumberCount": "Serial Number count must match requested quantity ({{required}} items)",
     "errorDuplicateSerialNumber": "Duplicate Serial Numbers found. Please check again.",
-    "hint": "Please enter all {{count}} Serial Numbers"
+    "hint": "Please enter all {{count}} Serial Numbers",
+    "uploadImage": "Upload Image",
+    "clickToUpload": "Click to upload image",
+    "supportedFormats": "Supported formats: JPG, PNG, GIF (Max 5MB)",
+    "invalidFileType": "Please select a valid image file",
+    "fileTooLarge": "File size must not exceed 5MB",
+    "errorUploadImage": "Failed to upload image"
   },
   "department": {
     "title": "Departments",

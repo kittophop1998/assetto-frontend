@@ -69,11 +69,23 @@ export default function ApprovedPage() {
     setApproveModalOpen(true);
   };
 
-  const handleApproveSubmit = async () => {
-    if (!selectedRequest) return;
+  const handleApproveSubmit = async (imageFile: File | null) => {
+    if (!selectedRequest || !imageFile) return;
 
     try {
       setSubmitting(true);
+      
+      // Upload image with requestCode
+      const uploadResponse = await requestService.uploadApprovalImage(
+        imageFile,
+        selectedRequest.requestCode
+      );
+      
+      if (!uploadResponse.success) {
+        throw new Error(t('approve.errorUploadImage'));
+      }
+
+      // Approve request
       const response = await requestService.approveRequest(
         selectedRequest.requestCode,
         selectedRequest.requestType

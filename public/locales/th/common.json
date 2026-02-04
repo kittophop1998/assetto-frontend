@@ -81,7 +81,14 @@
     "rejectSuccessMessage": "ปฏิเสธคำขอเรียบร้อยแล้ว",
     "errorRejectMessage": "เกิดข้อผิดพลาดในการปฏิเสธคำขอ",
     "errorLoadRequests": "ไม่สามารถโหลดรายการคำขอได้",
-    "noRequests": "ไม่มีคำขอที่รออนุมัติ"
+    "noRequests": "ไม่มีคำขอที่รออนุมัติ",
+    "uploadImage": "อัปโหลดรูปภาพ",
+    "clickToUpload": "คลิกเพื่ออัปโหลดรูปภาพ",
+    "supportedFormats": "รองรับไฟล์: JPG, PNG, GIF (ไม่เกิน 5MB)",
+    "invalidFileType": "กรุณาเลือกไฟล์รูปภาพที่ถูกต้อง",
+    "fileTooLarge": "ขนาดไฟล์ต้องไม่เกิน 5MB",
+    "errorUploadImage": "ไม่สามารถอัปโหลดรูปภาพได้",
+    "description": "รายการคำขอที่รอการอนุมัติ"
   },
   "common": {
     "search": "ค้นหา",

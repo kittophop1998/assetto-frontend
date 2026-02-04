@@ -92,6 +92,20 @@ export const requestService = {
     return response.data;
   },
 
+  // Upload image for approval
+  uploadApprovalImage: async (file: File, requestCode: string): Promise<ApiResponse<{ imageUrl: string }>> => {
+    const formData = new FormData();
+    formData.append('image', file);
+    formData.append('requestCode', requestCode);
+    
+    const response = await axiosInstance.post('/asset-requests/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
+
   approveRequest: async (code: string, type: RequestType): Promise<ApiResponse<string>> => {
     const response = await axiosInstance.put(`/asset-requests/${code}/approve?type=${type}`);
     return response.data;
