@@ -61,10 +61,70 @@ function BarcodeScanner({ onScanSuccess, onScanError }: BarcodeScannerProps) {
     constraints: {
       video: {
         facingMode: 'environment', // Use back camera on mobile
+        width: { ideal: 1920 },
+        height: { ideal: 1080 },
       },
       audio: false,
     },
   });
+
+  // Set up autofocus when video stream is ready
+  useEffect(() => {
+    const video = ref.current;
+    if (!video) return;
+
+    const setupAutofocus = async () => {
+      try {
+        const stream = video.srcObject as MediaStream;
+        if (stream) {
+          const track = stream.getVideoTracks()[0];
+          const capabilities = track.getCapabilities();
+
+          // Check if focus mode is supported
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const extendedCapabilities = capabilities as any;
+
+          if ('focusMode' in capabilities) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const settings: Record<string, any> = {};
+
+            // Try to set continuous autofocus
+            if (Array.isArray(extendedCapabilities.focusMode) &&
+              extendedCapabilities.focusMode.includes('continuous')) {
+              settings.focusMode = 'continuous';
+            }
+
+            // Apply focus settings if available
+            if (Object.keys(settings).length > 0) {
+              await track.applyConstraints({
+                advanced: [settings]
+              });
+              console.log('Autofocus enabled:', settings);
+            }
+          }
+        }
+      } catch (error) {
+        console.log('Could not enable autofocus:', error);
+        // Non-critical error, continue without autofocus
+      }
+    };
+
+    // Wait for video to start playing before setting up autofocus
+    const handlePlay = () => {
+      setupAutofocus();
+    };
+
+    video.addEventListener('play', handlePlay);
+
+    // If already playing, set up immediately
+    if (!video.paused) {
+      setupAutofocus();
+    }
+
+    return () => {
+      video.removeEventListener('play', handlePlay);
+    };
+  }, [ref]);
 
   return (
     <video
