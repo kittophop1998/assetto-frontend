@@ -239,7 +239,7 @@ export default function RequestModal({ open, onClose, onSubmit }: RequestModalPr
     console.log('Scanned successfully:', text);
     setFormData((prev) => ({
       ...prev,
-      serialNumber: text,
+      assetItemCode: text,
     }));
     setShowScanner(false);
     setScannerError('');
@@ -332,7 +332,7 @@ export default function RequestModal({ open, onClose, onSubmit }: RequestModalPr
             console.log('Code successfully detected:', detectedCode);
             setFormData((prev) => ({
               ...prev,
-              serialNumber: detectedCode,
+              assetItemCode: detectedCode,
             }));
             setUploadError('');
             fetchAssetDetail(detectedCode);
