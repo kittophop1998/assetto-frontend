@@ -86,6 +86,7 @@ export default function MyAssetsPage() {
         try {
             const requestData: CreateRequestData = {
                 assetItemCode: data.assetItemCode,
+                location: data.location,
             };
 
             const response = await requestService.createRequest(requestData);
@@ -179,6 +180,13 @@ export default function MyAssetsPage() {
                 }
                 return <StatusBadge status={config.badge} label={t(config.labelKey)} />;
             },
+        },
+        {
+            id: 'locationName',
+            label: 'สถานที่',
+            align: 'center',
+            minWidth: 140,
+            format: (value) => String(value ?? '-'),
         },
         {
             id: 'assignedDate',

@@ -10,6 +10,8 @@ export interface AssetRequest {
   assetName: string;
   departmentName: string;
   departmentId: number;
+  locationId?: number;
+  locationName?: string;
   quantity: number;
   status: RequestStatus;
   requestType: RequestType;
@@ -23,6 +25,7 @@ export interface AssetRequest {
 export type CreateRequestData =
   | {
       assetItemCode: string;
+      location: number;
     }
   | {
       assetId: string;
@@ -30,6 +33,7 @@ export type CreateRequestData =
       quantity: number;
       dateRequest: string;
       approvedBy: string;
+      location?: number;
     };
 
 export interface CreateReturnData {

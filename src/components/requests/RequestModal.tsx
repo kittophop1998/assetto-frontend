@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -15,6 +15,12 @@ import {
   InputAdornment,
   Alert,
   CircularProgress,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  FormHelperText,
+  SelectChangeEvent,
 } from '@mui/material';
 import {
   Close as CloseIcon,
@@ -26,6 +32,7 @@ import { useZxing } from 'react-zxing';
 import jsQR from 'jsqr';
 import { BrowserMultiFormatReader, NotFoundException } from '@zxing/library';
 import { getAssetItemByAssetItemCode, AssetItemLookup } from '@/src/services/assetItemService';
+import { getLocation, Location } from '@/src/services/masterService';
 
 interface RequestModalProps {
   open: boolean;
@@ -35,6 +42,7 @@ interface RequestModalProps {
 
 export interface RequestFormData {
   assetItemCode: string;
+  location: number;
 }
 
 // Scanner Component with useZxing hook
@@ -148,10 +156,29 @@ export default function RequestModal({ open, onClose, onSubmit }: RequestModalPr
   const [assetError, setAssetError] = useState('');
   const [scannerError, setScannerError] = useState<string>('');
   const [uploadError, setUploadError] = useState<string>('');
+  const [locations, setLocations] = useState<Location[]>([]);
+  const [locationLoading, setLocationLoading] = useState(false);
+  const [locationError, setLocationError] = useState('');
 
   const [formData, setFormData] = useState<RequestFormData>({
     assetItemCode: '',
+    location: 0,
   });
+
+  const loadLocations = useCallback(async () => {
+    try {
+      setLocationLoading(true);
+      setLocationError('');
+      const data = await getLocation();
+      setLocations(data || []);
+    } catch (fetchError) {
+      console.error('Location lookup error:', fetchError);
+      setLocationError('ไม่สามารถโหลดข้อมูลสถานที่ได้');
+      setLocations([]);
+    } finally {
+      setLocationLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     if (open) {
@@ -162,9 +189,11 @@ export default function RequestModal({ open, onClose, onSubmit }: RequestModalPr
       setAssetError('');
       setFormData({
         assetItemCode: '',
+        location: 0,
       });
+      loadLocations();
     }
-  }, [open]);
+  }, [open, loadLocations]);
 
   const handleSerialNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -181,6 +210,14 @@ export default function RequestModal({ open, onClose, onSubmit }: RequestModalPr
       e.preventDefault();
       fetchAssetDetail(formData.assetItemCode);
     }
+  };
+
+  const handleLocationChange = (event: SelectChangeEvent) => {
+    const selectedId = Number(event.target.value);
+    setFormData((prev) => ({
+      ...prev,
+      location: selectedId,
+    }));
   };
 
   const fetchAssetDetail = async (assetItemCode: string) => {
@@ -216,6 +253,11 @@ export default function RequestModal({ open, onClose, onSubmit }: RequestModalPr
       return;
     }
 
+    if (!formData.location) {
+      setError('กรุณาเลือกสถานที่');
+      return;
+    }
+
     onSubmit(formData);
     handleClose();
   };
@@ -223,10 +265,12 @@ export default function RequestModal({ open, onClose, onSubmit }: RequestModalPr
   const handleClose = () => {
     setFormData({
       assetItemCode: '',
+      location: 0,
     });
     setError('');
     setAssetDetail(null);
     setAssetError('');
+    setLocationError('');
     onClose();
   };
 
@@ -405,6 +449,36 @@ export default function RequestModal({ open, onClose, onSubmit }: RequestModalPr
                   {error}
                 </Alert>
               )}
+
+              {locationError && (
+                <Alert severity="warning" onClose={() => setLocationError('')}>
+                  {locationError}
+                </Alert>
+              )}
+
+              {/* Location Dropdown */}
+              <FormControl fullWidth required>
+                <InputLabel>สถานที่ (Location)</InputLabel>
+                <Select
+                  value={formData.location ? String(formData.location) : ''}
+                  onChange={handleLocationChange}
+                  label="สถานที่ (Location)"
+                  disabled={locationLoading}
+                >
+                  {locationLoading ? (
+                    <MenuItem disabled>กำลังโหลด...</MenuItem>
+                  ) : locations.length === 0 ? (
+                    <MenuItem disabled>ไม่มีข้อมูลสถานที่</MenuItem>
+                  ) : (
+                    locations.map((location) => (
+                      <MenuItem key={location.id} value={location.id}>
+                        {location.name}
+                      </MenuItem>
+                    ))
+                  )}
+                </Select>
+                <FormHelperText>เลือกสถานที่สำหรับการขอเบิก</FormHelperText>
+              </FormControl>
 
               {/* Serial Number / Barcode Input with Camera Scanner */}
               <Box>

@@ -209,6 +209,13 @@ export default function RequestsPage() {
       minWidth: 180,
     },
     {
+      id: 'locationName',
+      label: 'สถานที่',
+      align: 'left',
+      minWidth: 160,
+      format: (value) => String(value ?? '-'),
+    },
+    {
       id: 'requestDate',
       label: 'วันที่ขอเบิก',
       align: 'center',

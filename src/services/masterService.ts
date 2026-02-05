@@ -15,12 +15,19 @@ export interface Category {
   prefix?: string;
 }
 
+export interface Location {
+  id: number;
+  name: string;
+  description?: string;
+}
+
 export interface MasterDataResponse {
   success: boolean;
   message: string;
   data: {
     departments: Department[];
     categories: Category[];
+    locations: Location[];
   };
 };
 
@@ -32,6 +39,11 @@ export const getDepartment = async (): Promise<Department[]> => {
 export const getCategory = async (): Promise<Category[]> => {
   const response = await axiosInstance.get<MasterDataResponse>('/master-data');
     return response.data.data.categories;
+};
+
+export const getLocation = async (): Promise<Location[]> => {
+  const response = await axiosInstance.get<MasterDataResponse>('/master-data');
+    return response.data.data.locations;
 };
 
 export const getMasterData = async (): Promise<{ departments: Department[]; categories: Category[] }> => {
