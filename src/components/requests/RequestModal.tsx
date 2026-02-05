@@ -25,7 +25,7 @@ import {
 import { useZxing } from 'react-zxing';
 import jsQR from 'jsqr';
 import { BrowserMultiFormatReader, NotFoundException } from '@zxing/library';
-import { getAssetItemBySerialNumber, AssetItemLookup } from '@/src/services/assetItemService';
+import { getAssetItemByAssetItemCode, AssetItemLookup } from '@/src/services/assetItemService';
 
 interface RequestModalProps {
   open: boolean;
@@ -34,7 +34,7 @@ interface RequestModalProps {
 }
 
 export interface RequestFormData {
-  serialNumber: string;
+  assetItemCode: string;
 }
 
 // Scanner Component with useZxing hook
@@ -150,7 +150,7 @@ export default function RequestModal({ open, onClose, onSubmit }: RequestModalPr
   const [uploadError, setUploadError] = useState<string>('');
 
   const [formData, setFormData] = useState<RequestFormData>({
-    serialNumber: '',
+    assetItemCode: '',
   });
 
   useEffect(() => {
@@ -161,7 +161,7 @@ export default function RequestModal({ open, onClose, onSubmit }: RequestModalPr
       setAssetDetail(null);
       setAssetError('');
       setFormData({
-        serialNumber: '',
+        assetItemCode: '',
       });
     }
   }, [open]);
@@ -170,7 +170,7 @@ export default function RequestModal({ open, onClose, onSubmit }: RequestModalPr
     const value = e.target.value;
     setFormData((prev) => ({
       ...prev,
-      serialNumber: value,
+      assetItemCode: value,
     }));
     setAssetDetail(null);
     setAssetError('');
@@ -179,12 +179,12 @@ export default function RequestModal({ open, onClose, onSubmit }: RequestModalPr
   const handleSerialNumberKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      fetchAssetDetail(formData.serialNumber);
+      fetchAssetDetail(formData.assetItemCode);
     }
   };
 
-  const fetchAssetDetail = async (serialNumber: string) => {
-    if (!serialNumber?.trim()) {
+  const fetchAssetDetail = async (assetItemCode: string) => {
+    if (!assetItemCode?.trim()) {
       setAssetDetail(null);
       return;
     }
@@ -192,12 +192,12 @@ export default function RequestModal({ open, onClose, onSubmit }: RequestModalPr
     try {
       setAssetLoading(true);
       setAssetError('');
-      const response = await getAssetItemBySerialNumber(serialNumber.trim());
+      const response = await getAssetItemByAssetItemCode(assetItemCode.trim());
       if (response.success && response.data) {
         setAssetDetail(response.data);
       } else {
         setAssetDetail(null);
-        setAssetError('ไม่พบข้อมูลสินทรัพย์จากหมายเลข Serial Number นี้');
+        setAssetError('ไม่พบข้อมูลสินทรัพย์จากหมายเลขนี้');
       }
     } catch (fetchError) {
       console.error('Asset lookup error:', fetchError);
@@ -211,8 +211,8 @@ export default function RequestModal({ open, onClose, onSubmit }: RequestModalPr
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.serialNumber) {
-      setError('กรุณากรอกหมายเลข Serial Number');
+    if (!formData.assetItemCode.trim()) {
+      setError('กรุณากรอกหมายเลขสินทรัพย์');
       return;
     }
 
@@ -222,7 +222,7 @@ export default function RequestModal({ open, onClose, onSubmit }: RequestModalPr
 
   const handleClose = () => {
     setFormData({
-      serialNumber: '',
+      assetItemCode: '',
     });
     setError('');
     setAssetDetail(null);
@@ -414,9 +414,9 @@ export default function RequestModal({ open, onClose, onSubmit }: RequestModalPr
                     required
                     inputRef={serialNumberRef}
                     name="serialNumber"
-                    label="หมายเลข SN (Serial Number)"
-                    placeholder="สแกน Barcode หรือกรอกหมายเลข SN"
-                    value={formData.serialNumber}
+                    label="หมายเลขสินทรัพย์ (Serial Number / Asset Code)"
+                    placeholder="สแกน Barcode/QR Code หรือกรอกหมายเลข"
+                    value={formData.assetItemCode}
                     onChange={handleSerialNumberChange}
                     onKeyDown={handleSerialNumberKeyDown}
                     InputProps={{
@@ -427,7 +427,7 @@ export default function RequestModal({ open, onClose, onSubmit }: RequestModalPr
                       ),
                     }}
                     sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
-                    helperText="สามารถสแกน Barcode หรือกรอกด้วยมือได้"
+                    helperText="กดปุ่มกล้องเพื่อสแกน หรือปุ่มอัปโหลดเพื่อใช้รูปภาพ"
                   />
                   <IconButton
                     color="primary"
@@ -440,6 +440,7 @@ export default function RequestModal({ open, onClose, onSubmit }: RequestModalPr
                         bgcolor: 'primary.dark',
                       },
                     }}
+                    title="สแกนด้วยกล้อง"
                   >
                     <CameraAltIcon />
                   </IconButton>
@@ -454,6 +455,7 @@ export default function RequestModal({ open, onClose, onSubmit }: RequestModalPr
                         bgcolor: 'secondary.dark',
                       },
                     }}
+                    title="อัปโหลดรูปภาพ"
                   >
                     <UploadIcon />
                     <input
@@ -492,65 +494,176 @@ export default function RequestModal({ open, onClose, onSubmit }: RequestModalPr
                 <Box
                   sx={{
                     borderRadius: 2,
-                    border: '1px solid',
-                    borderColor: 'divider',
-                    p: 2,
-                    bgcolor: 'background.default',
+                    border: '2px solid',
+                    borderColor: 'success.main',
+                    p: 2.5,
+                    bgcolor: 'success.lighter',
                   }}
                 >
-                  <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 1 }}>
-                    รายละเอียดสินทรัพย์
-                  </Typography>
-                  <Stack spacing={1}>
-                    <Box>
-                      <Typography variant="body2" color="text.secondary">
+                  <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
+                    <Box
+                      sx={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: '50%',
+                        bgcolor: 'success.main',
+                      }}
+                    />
+                    <Typography variant="subtitle1" fontWeight={700} color="success.dark">
+                      พบข้อมูลสินทรัพย์
+                    </Typography>
+                  </Stack>
+
+                  <Stack spacing={2}>
+                    {/* Asset Name - Prominent Display */}
+                    <Box
+                      sx={{
+                        p: 2,
+                        borderRadius: 1.5,
+                        bgcolor: 'background.paper',
+                        border: '1px solid',
+                        borderColor: 'divider',
+                      }}
+                    >
+                      <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>
                         ชื่อสินทรัพย์
                       </Typography>
-                      <Typography variant="body1" fontWeight={500}>
+                      <Typography variant="h6" fontWeight={600} color="text.primary">
                         {assetDetail.assetName}
                       </Typography>
                     </Box>
+
+                    {/* Asset Codes Grid */}
                     <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                      <Box>
-                        <Typography variant="body2" color="text.secondary">
-                          Asset Code
+                      <Box
+                        sx={{
+                          flex: 1,
+                          p: 1.5,
+                          borderRadius: 1.5,
+                          bgcolor: 'background.paper',
+                          border: '1px solid',
+                          borderColor: 'divider',
+                        }}
+                      >
+                        <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>
+                          Asset Code (AC)
                         </Typography>
-                        <Typography variant="body1" fontWeight={500}>
+                        <Typography variant="body1" fontWeight={600} sx={{ fontFamily: 'monospace' }}>
                           {assetDetail.assetCodeAC}
                         </Typography>
                       </Box>
-                      <Box>
-                        <Typography variant="body2" color="text.secondary">
-                          Serial Number
+                      <Box
+                        sx={{
+                          flex: 1,
+                          p: 1.5,
+                          borderRadius: 1.5,
+                          bgcolor: 'background.paper',
+                          border: '1px solid',
+                          borderColor: 'divider',
+                        }}
+                      >
+                        <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>
+                          Asset Code
                         </Typography>
-                        <Typography variant="body1" fontWeight={500}>
-                          {assetDetail.serialNumber}
-                        </Typography>
-                      </Box>
-                      <Box>
-                        <Typography variant="body2" color="text.secondary">
-                          สถานะ
-                        </Typography>
-                        <Typography variant="body1" fontWeight={500}>
-                          {statusLabels[assetDetail.status] ?? assetDetail.status}
+                        <Typography variant="body1" fontWeight={600} sx={{ fontFamily: 'monospace' }}>
+                          {assetDetail.assetCode}
                         </Typography>
                       </Box>
                     </Stack>
+
+                    {/* Serial Number and Status */}
                     <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                      <Box>
-                        <Typography variant="body2" color="text.secondary">
-                          วันที่ซื้อ
+                      <Box
+                        sx={{
+                          flex: 1,
+                          p: 1.5,
+                          borderRadius: 1.5,
+                          bgcolor: 'background.paper',
+                          border: '1px solid',
+                          borderColor: 'divider',
+                        }}
+                      >
+                        <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>
+                          Serial Number
                         </Typography>
-                        <Typography variant="body1" fontWeight={500}>
-                          {new Date(assetDetail.purchaseDate).toLocaleDateString('th-TH')}
+                        <Typography variant="body1" fontWeight={600} sx={{ fontFamily: 'monospace' }}>
+                          {assetDetail.serialNumber}
                         </Typography>
                       </Box>
-                      <Box>
-                        <Typography variant="body2" color="text.secondary">
-                          หมดประกัน
+                      <Box
+                        sx={{
+                          flex: 1,
+                          p: 1.5,
+                          borderRadius: 1.5,
+                          bgcolor: 'background.paper',
+                          border: '1px solid',
+                          borderColor: 'divider',
+                        }}
+                      >
+                        <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>
+                          สถานะ
+                        </Typography>
+                        <Box
+                          sx={{
+                            display: 'inline-block',
+                            px: 1.5,
+                            py: 0.5,
+                            borderRadius: 1,
+                            bgcolor: assetDetail.status === 'AVAILABLE' ? 'success.main' :
+                              assetDetail.status === 'IN_USE' ? 'warning.main' :
+                                assetDetail.status === 'MAINTENANCE' ? 'info.main' : 'error.main',
+                            color: 'white',
+                          }}
+                        >
+                          <Typography variant="body2" fontWeight={600}>
+                            {statusLabels[assetDetail.status] ?? assetDetail.status}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </Stack>
+
+                    {/* Purchase and Warranty Dates */}
+                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                      <Box
+                        sx={{
+                          flex: 1,
+                          p: 1.5,
+                          borderRadius: 1.5,
+                          bgcolor: 'background.paper',
+                          border: '1px solid',
+                          borderColor: 'divider',
+                        }}
+                      >
+                        <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>
+                          📅 วันที่ซื้อ
                         </Typography>
                         <Typography variant="body1" fontWeight={500}>
-                          {new Date(assetDetail.warrantyEnd).toLocaleDateString('th-TH')}
+                          {new Date(assetDetail.purchaseDate).toLocaleDateString('th-TH', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                          })}
+                        </Typography>
+                      </Box>
+                      <Box
+                        sx={{
+                          flex: 1,
+                          p: 1.5,
+                          borderRadius: 1.5,
+                          bgcolor: 'background.paper',
+                          border: '1px solid',
+                          borderColor: 'divider',
+                        }}
+                      >
+                        <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>
+                          🛡️ หมดประกัน
+                        </Typography>
+                        <Typography variant="body1" fontWeight={500}>
+                          {new Date(assetDetail.warrantyEnd).toLocaleDateString('th-TH', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                          })}
                         </Typography>
                       </Box>
                     </Stack>

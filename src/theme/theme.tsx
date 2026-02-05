@@ -39,6 +39,8 @@ const theme = createTheme({
       main: '#10B981',
       light: '#34D399',
       dark: '#059669',
+      // @ts-expect-error - Adding custom color
+      lighter: '#D1FAE5',
     },
     grey: {
       50: '#F8FAFC',

@@ -22,8 +22,7 @@ export interface AssetRequest {
 
 export type CreateRequestData =
   | {
-      serialNumber: string;
-      departmentId?: string;
+      assetItemCode: string;
     }
   | {
       assetId: string;

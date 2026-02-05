@@ -34,7 +34,7 @@ import {
 import AssetService, { AssetFormData } from '@/src/services/assetService';
 import MainLayout from '@/src/components/layout/MainLayout';
 import { Category, Department, getMasterData } from '@/src/services/masterService';
-import { AssetItem, createAssetItem, CreateAssetItemDTO, deleteAssetItem, getAssetItems, updateAssetItem } from '@/src/services/assetItemService';
+import { AssetItem, createAssetItem, CreateAssetItemDTO, deleteAssetItem, getAssetItems, updateAssetItem, getAssetItemByAssetCode } from '@/src/services/assetItemService';
 
 export default function AssetFormPage() {
   const router = useRouter();
@@ -111,7 +111,6 @@ export default function AssetFormPage() {
     } catch (error) {
       console.error('Failed to load asset items:', error);
       setEquipments([]);
-      // Silently fail for asset items - user can still manage the asset
     } finally {
       setLoadingItems(false);
     }
@@ -187,8 +186,6 @@ export default function AssetFormPage() {
 
   const handleOpenModal = async () => {
     setEditingEquipment(null);
-    
-    // Get lastCodeAssetItem from API
     let assetCode = '';
     
     try {
@@ -243,16 +240,16 @@ export default function AssetFormPage() {
 
     try {
       if (editingEquipment) {
-        const updated = await updateAssetItem(editingEquipment.id, {
+        await updateAssetItem(editingEquipment.assetCode, {
           assetCodeAC: equipmentForm.assetCodeAC,
+          assetCode: editingEquipment.assetCode,
           serialNumber: equipmentForm.serialNumber,
           purchaseDate: equipmentForm.purchaseDate,
           warrantyEnd: equipmentForm.warrantyEnd,
         });
 
-        setEquipments(prev => prev.map(eq =>
-          eq.id === editingEquipment.id ? updated : eq
-        ));
+        // Reload equipments list after update
+        await loadEquipments();
       } else {
         const createData: CreateAssetItemDTO = {
           assetId: Number(params.id),
@@ -273,14 +270,34 @@ export default function AssetFormPage() {
     }
   };
 
-  const handleEditEquipment = (equipment: AssetItem) => {
+  const handleEditEquipment = async (equipment: AssetItem) => {
     setEditingEquipment(equipment);
+    if (equipment.assetCode) {
+      try {
+        const freshEquipment = await getAssetItemByAssetCode(equipment.assetCode);
+        
+        setEquipmentForm({
+          assetCode: freshEquipment.assetCode || '',
+          assetCodeAC: freshEquipment.assetCodeAC || '',
+          serialNumber: freshEquipment.serialNumber || '',
+          purchaseDate: freshEquipment.purchaseDate ? freshEquipment.purchaseDate.split('T')[0] : '',
+          warrantyEnd: freshEquipment.warrantyEnd ? freshEquipment.warrantyEnd.split('T')[0] : '',
+        });
+        setOpenModal(true);
+        return;
+      } catch (error) {
+        console.error('Failed to load equipment details:', error);
+        alert('ไม่สามารถโหลดข้อมูลอุปกรณ์ได้');
+        return;
+      }
+    }
+    
     setEquipmentForm({
-      assetCode: '', // Not used when editing
+      assetCode: equipment.assetCode || '',
       assetCodeAC: equipment.assetCodeAC || '',
-      serialNumber: equipment.serialNumber,
-      purchaseDate: equipment.purchaseDate,
-      warrantyEnd: equipment.warrantyEnd,
+      serialNumber: equipment.serialNumber || '',
+      purchaseDate: equipment.purchaseDate ? equipment.purchaseDate.split('T')[0] : '',
+      warrantyEnd: equipment.warrantyEnd ? equipment.warrantyEnd.split('T')[0] : '',
     });
     setOpenModal(true);
   };
@@ -470,7 +487,7 @@ export default function AssetFormPage() {
                           </TableRow>
                         ) : (
                           equipments.map((equipment, index) => (
-                            <TableRow key={equipment.id} hover>
+                            <TableRow key={equipment.assetCode} hover>
                               <TableCell>{index + 1}</TableCell>
                               <TableCell>{equipment.assetCode}</TableCell>
                               <TableCell>{equipment.assetCodeAC}</TableCell>
@@ -518,7 +535,6 @@ export default function AssetFormPage() {
             </DialogTitle>
             <DialogContent>
               <Box sx={{ pt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
-                {/* Asset Code - Disabled field, auto-generated */}
                 {!editingEquipment && (
                   <TextField
                     fullWidth

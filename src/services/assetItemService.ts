@@ -13,6 +13,7 @@ export interface CreateAssetItemDTO {
 
 export interface UpdateAssetItemDTO {
   assetCodeAC?: string;
+  assetCode?: string;
   serialNumber?: string;
   status?: AssetItemStatus;
   purchaseDate?: string;
@@ -21,7 +22,9 @@ export interface UpdateAssetItemDTO {
 
 export interface AssetItem {
   id: number;
-  assetModelId: number;
+  assetModelId?: number;
+  assetId?: number;
+  assetName?: string;
   assetCode: string;
   assetCodeAC: string;
   serialNumber: string;
@@ -44,6 +47,7 @@ export interface AssetItemLookup {
   assetId: number;
   assetName: string;
   assetCodeAC: string;
+  assetCode: string;
   serialNumber: string;
   status: AssetItemStatus;
   purchaseDate: string;
@@ -60,13 +64,13 @@ export interface ApiResponse<T> {
 }
 
 export const getAssetItems = async (assetModelId: number): Promise<AssetItem[]> => {
-    const response = await axiosInstance.get(`/asset-items/${assetModelId}`);
+    const response = await axiosInstance.get(`/asset-items/items/${assetModelId}`);
     
     return response.data.data;
 };
 
-export const getAssetItemById = async (id: number): Promise<AssetItem> => {
-    const response = await axiosInstance.get(`/asset-items/${id}`);
+export const getAssetItemByAssetCode = async (assetCode: string): Promise<AssetItem> => {
+    const response = await axiosInstance.get(`/asset-items/${assetCode}`);
     return response.data.data;
 };
 
@@ -75,8 +79,8 @@ export const createAssetItem = async (data: CreateAssetItemDTO): Promise<string>
     return response.data.data;
 };
 
-export const updateAssetItem = async (id: number, data: UpdateAssetItemDTO): Promise<AssetItem> => {
-    const response = await axiosInstance.put(`/asset-items/${id}`, data);
+export const updateAssetItem = async (assetCode: string, data: UpdateAssetItemDTO): Promise<AssetItem> => {
+    const response = await axiosInstance.put(`/asset-items/${assetCode}`, data);
     return response.data.data;
 }
 
@@ -86,5 +90,10 @@ export const deleteAssetItem = async (id: number): Promise<void> => {
 
 export const getAssetItemBySerialNumber = async (serialNumber: string): Promise<ApiResponse<AssetItemLookup>> => {
   const response = await axiosInstance.get(`/asset-items/serial-number/${serialNumber}`);
+  return response.data;
+}
+
+export const getAssetItemByAssetItemCode = async (assetItemCode: string): Promise<ApiResponse<AssetItemLookup>> => {
+  const response = await axiosInstance.get(`/asset-items/${assetItemCode}`);
   return response.data;
 }

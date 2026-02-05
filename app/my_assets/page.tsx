@@ -85,11 +85,10 @@ export default function MyAssetsPage() {
     const handleSubmitRequest = async (data: RequestFormData) => {
         try {
             const requestData: CreateRequestData = {
-                serialNumber: data.serialNumber,
+                assetItemCode: data.assetItemCode,
             };
 
             const response = await requestService.createRequest(requestData);
-
             if (response.success) {
                 setSnackbar({
                     open: true,
@@ -128,6 +127,24 @@ export default function MyAssetsPage() {
             minWidth: 200,
             format: (value) => (
                 <Box component="span" sx={{ fontWeight: 500 }}>
+                    {String(value ?? '')}
+                </Box>
+            ),
+        },
+        {
+            id: 'assetItemCode',
+            label: 'Asset Code',
+            align: 'center',
+            minWidth: 150,
+            format: (value) => (
+                <Box
+                    component="span"
+                    sx={{
+                        fontFamily: 'monospace',
+                        fontSize: '0.875rem',
+                        color: 'text.secondary',
+                    }}
+                >
                     {String(value ?? '')}
                 </Box>
             ),
