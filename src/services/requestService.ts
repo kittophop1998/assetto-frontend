@@ -12,6 +12,8 @@ export interface AssetRequest {
   departmentId: number;
   locationId?: number;
   locationName?: string;
+  imageUrl?: string | null;
+  requesterName?: string;
   quantity: number;
   status: RequestStatus;
   requestType: RequestType;
@@ -52,14 +54,35 @@ export interface ApiResponse<T> {
   timestamp: string;
 }
 
+export interface PaginationInfo {
+  total?: number;
+  totalPages?: number;
+  totalItems?: number;
+  page?: number;
+}
+
+export interface PaginatedApiResponse<T> extends ApiResponse<T> {
+  pagination?: PaginationInfo;
+}
+
+export interface RequestListParams {
+  page?: number;
+  limit?: number;
+  type?: RequestType;
+}
+
 export const requestService = {
-  // Get all asset requests (filter only REQUEST type)
-  getRequests: async (): Promise<ApiResponse<AssetRequest[]>> => {
-    const response = await axiosInstance.get('/asset-requests?type=REQUEST');
+  getRequests: async (params: RequestListParams = {}): Promise<PaginatedApiResponse<AssetRequest[]>> => {
+    const response = await axiosInstance.get('/asset-requests', {
+      params: {
+        type: params.type ?? 'REQUEST',
+        page: params.page,
+        limit: params.limit,
+      },
+    });
     return response.data;
   },
 
-  // Get user's asset requests (assets in possession)
   getUserAssets: async (): Promise<ApiResponse<AssetRequest[]>> => {
     const response = await axiosInstance.get(`/asset-requests/my-requests`);
     return response.data;

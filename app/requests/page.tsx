@@ -14,7 +14,6 @@ import {
   ListItemText,
   Alert,
   Snackbar,
-  CircularProgress,
 } from '@mui/material';
 import {
   Visibility as VisibilityIcon,
@@ -31,6 +30,9 @@ export default function RequestsPage() {
   const router = useRouter();
   const [requests, setRequests] = useState<AssetRequest[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [totalRows, setTotalRows] = useState(0);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedRequest, setSelectedRequest] = useState<number | null>(null);
   const [snackbar, setSnackbar] = useState({
@@ -41,15 +43,19 @@ export default function RequestsPage() {
 
   useEffect(() => {
     loadRequests();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, rowsPerPage]);
 
   const loadRequests = async () => {
     try {
       setLoading(true);
-      const response = await requestService.getRequests();
+      const response = await requestService.getRequests({
+        page: page + 1,
+        limit: rowsPerPage,
+      });
       if (response.success) {
-        // แสดงทั้ง REQUEST และ RETURN
-        setRequests(response.data);
+        setRequests(response.data || []);
+        setTotalRows(response.pagination?.totalItems || response.pagination?.total || 0);
       }
     } catch (error) {
       console.error('Error loading requests:', error);
@@ -58,6 +64,8 @@ export default function RequestsPage() {
         message: 'ไม่สามารถโหลดข้อมูลรายการขอเบิกได้',
         severity: 'error',
       });
+      setRequests([]);
+      setTotalRows(0);
     } finally {
       setLoading(false);
     }
@@ -254,36 +262,19 @@ export default function RequestsPage() {
         </Box>
       </Box>
 
-      {/* <Box sx={{ mb: 3 }}>
-          <Breadcrumbs
-            separator={<ChevronRightIcon fontSize="small" />}
-            sx={{ mb: 1, fontSize: '0.875rem', color: 'text.secondary' }}
-          >
-            <Link underline="hover" color="inherit" href="/">
-              หน้าหลัก
-            </Link>
-            <Typography color="primary" fontWeight={500} fontSize="0.875rem">
-              รายการขอเบิก
-            </Typography>
-          </Breadcrumbs>
-        </Box> */}
-
       {/** Table */}
       <Paper elevation={0} sx={{ borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
-        {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
-            <CircularProgress />
-          </Box>
-        ) : (
-          <DataTable
-            columns={columns}
-            rows={requests}
-            page={0}
-            rowsPerPage={10}
-            totalRows={requests.length}
-            emptyMessage="ไม่มีรายการขอเบิก"
-          />
-        )}
+        <DataTable
+          columns={columns}
+          rows={requests}
+          page={page}
+          rowsPerPage={rowsPerPage}
+          totalRows={totalRows}
+          onPageChange={setPage}
+          onRowsPerPageChange={setRowsPerPage}
+          loading={loading}
+          emptyMessage="ไม่มีรายการขอเบิก"
+        />
       </Paper>
 
       <Menu
