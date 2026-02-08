@@ -8,6 +8,7 @@ export interface AssetRequest {
   requestCode: string;
   serialNumber: string;
   assetName: string;
+  assetItemCode: string;
   departmentName: string;
   departmentId: number;
   locationId?: number;
@@ -19,7 +20,6 @@ export interface AssetRequest {
   requestType: RequestType;
   requestDate: string;
   approvalDate: string | null;
-  fulfillmentDate: string | null;
   assignedDate: string | null;
   returnedDate: string | null;
 }
@@ -39,12 +39,7 @@ export type CreateRequestData =
     };
 
 export interface CreateReturnData {
-  id: number;
-  type: 'RETURN';
-}
-
-export interface ReturnResponse {
-  serialNumber: string;
+  assetItemCode?: string;
 }
 
 export interface ApiResponse<T> {
@@ -101,9 +96,9 @@ export const requestService = {
   },
 
   // Create return request (คืน)
-  createReturn: async (data: CreateReturnData): Promise<ReturnResponse> => {
-    const response = await axiosInstance.get(`/asset-requests/return?id=${data.id}&type=${data.type}`);
-    return response.data;
+  createReturn: async (data: CreateReturnData): Promise<boolean> => {
+    const response = await axiosInstance.post('/asset-requests/return', data);
+    return response.data.success as boolean;
   },
 
   // Update request

@@ -207,8 +207,10 @@ export default function MyAssetsPage() {
             label: 'จัดการ',
             align: 'center',
             minWidth: 100,
-            format: (_, row) => (
-                row.status === 'APPROVED' && !row.returnedDate ? (
+            format: (_, row) => {
+                const assetCode = (row as unknown as { assetItemCode?: string }).assetItemCode;
+                const canReturn = row.status === 'APPROVED' && !row.returnedDate && !assetCode?.startsWith('OUT-');
+                return canReturn ? (
                     <Button
                         variant="contained"
                         size="small"
@@ -222,8 +224,8 @@ export default function MyAssetsPage() {
                     >
                         คืน
                     </Button>
-                ) : null
-            ),
+                ) : null;
+            },
         },
     ];
 
@@ -293,9 +295,9 @@ export default function MyAssetsPage() {
                 open={returnModalOpen}
                 onClose={handleCloseReturnModal}
                 onSuccess={handleReturnSuccess}
-                requestId={selectedAsset?.requestId}
                 assetName={selectedAsset?.assetName}
                 serialNumber={selectedAsset?.serialNumber}
+                assetItemCode={selectedAsset?.assetItemCode}
             />
 
             {/* Snackbar for notifications */}

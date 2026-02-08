@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Dialog,
   DialogTitle,
@@ -26,40 +27,36 @@ interface ReturnModalProps {
   requestId?: number;
   assetName?: string;
   serialNumber?: string;
+  assetItemCode?: string;
 }
 
 export default function ReturnModal({
   open,
   onClose,
   onSuccess,
-  requestId,
   assetName,
   serialNumber,
+  assetItemCode
 }: ReturnModalProps) {
   const { t } = useTranslation('common');
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async () => {
     setError(null);
-
-    if (!requestId) {
-      setError('ข้อมูลไม่ครบถ้วน');
-      return;
-    }
-
     setLoading(true);
 
     try {
       const returnData: CreateReturnData = {
-        id: requestId,
-        type: 'RETURN',
+        assetItemCode: assetItemCode,
       };
       
-      const response = await requestService.createReturn(returnData);
-      if (response.serialNumber) {
+      const success = await requestService.createReturn(returnData);
+      if (success) {
         handleClose();
         onSuccess();
+        router.push('/my_assets');
       }
     } catch (err: unknown) {
       if (err instanceof Error) {
