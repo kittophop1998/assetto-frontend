@@ -19,6 +19,9 @@ import {
 import { requestService, AssetRequest, CreateRequestData } from '@/src/services/requestService';
 import { REQUEST_STATUS_BADGE_MAP } from '@/src/constants/status';
 import { useTranslation } from 'react-i18next';
+import { get } from 'http';
+import getErrorCode from '@/src/lib/getErrorCode';
+import REQUEST_ERROR_MESSAGES from '@/src/constants/error';
 
 export default function MyAssetsPage() {
     const [myAssets, setMyAssets] = useState<AssetRequest[]>([]);
@@ -86,7 +89,8 @@ export default function MyAssetsPage() {
         try {
             const requestData: CreateRequestData = {
                 assetItemCode: data.assetItemCode,
-                location: data.location,
+                quantity: data.quantity,
+                locationId: data.locationId,
             };
 
             const response = await requestService.createRequest(requestData);
@@ -98,7 +102,19 @@ export default function MyAssetsPage() {
                 });
                 loadMyAssets();
             }
-        } catch (error) {
+        } catch (error: unknown) {
+            const errorCode = getErrorCode(error);
+
+            if (errorCode && errorCode in REQUEST_ERROR_MESSAGES) {
+                setSnackbar({
+                    open: true,
+                    message: REQUEST_ERROR_MESSAGES[errorCode],
+                    severity: 'error',
+                });
+
+                return;
+            }
+
             console.error('Error submitting request:', error);
             setSnackbar({
                 open: true,

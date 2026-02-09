@@ -27,7 +27,8 @@ export interface AssetRequest {
 export type CreateRequestData =
   | {
       assetItemCode: string;
-      location: number;
+      quantity: number;
+      locationId: number;
     }
   | {
       assetId: string;

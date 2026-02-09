@@ -67,6 +67,7 @@
     "unit": "Unit",
     "quantity": "Quantity",
     "total": "Total",
+    "requested": "Requested",
     "available": "Available",
     "inUse": "In Use",
     "costPerUnit": "Cost per Unit",

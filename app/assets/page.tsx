@@ -118,7 +118,7 @@ export default function AssetsPage() {
       ),
     },
     {
-      id: 'category',
+      id: 'categoryName',
       label: t('asset.category'),
       minWidth: 120,
     },
@@ -130,12 +130,23 @@ export default function AssetsPage() {
       format: (value) => `${value ?? 0}`,
     },
     {
+      id: 'requestedQuantity',
+      label: t('asset.requested'),
+      align: 'center',
+      minWidth: 100,
+      format: (value) => (
+        <Box component="span" sx={{ color: 'warning.main', fontWeight: 600 }}>
+          {String(value ?? 0)}
+        </Box>
+      ),
+    },
+    {
       id: 'availableQuantity',
       label: t('asset.available'),
       align: 'center',
       minWidth: 100,
       format: (value) => (
-        <Box component="span" sx={{ fontWeight: 700 }}>
+        <Box component="span" sx={{ fontWeight: 700, color: 'success.main' }}>
           {String(value ?? 0)}
         </Box>
       ),

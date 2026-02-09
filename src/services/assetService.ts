@@ -7,21 +7,27 @@ export interface Asset {
   code: string;
   name: string;
   category?: string;
-  category_id: number;
+  category_id?: number;
   category_name?: string;
+  category_prefix?: string;
   categoryId?: number;
   categoryName?: string;
-  description: string;
-  unit: string;
-  total_quantity?: number;
+  categoryPrefix?: string;
+  description?: string;
+  unit?: string;
+  // New API fields
+  total_qty?: number;
+  requested_qty?: number;
+  available_qty?: number;
+  // Mapped fields for frontend
   totalQuantity?: number;
-  available_quantity?: number;
+  requestedQuantity?: number;
   availableQuantity?: number;
-  department_id: string | number;
+  department_id?: string | number;
   department_name?: string;
   departmentId?: string | number;
   departmentName?: string;
-  minimum_qty: number;
+  minimum_qty?: number;
   minimumQty?: number;
   status: AssetStatusType;
   lastCodeAssetItem?: string;
@@ -74,8 +80,9 @@ class AssetService {
       categoryId: asset.category_id,
       category: asset.category_name,
       categoryName: asset.category_name,
-      totalQuantity: asset.total_quantity || 0,
-      availableQuantity: asset.available_quantity || 0,
+      totalQuantity: asset.total_qty || 0,
+      requestedQuantity: asset.requested_qty || 0,
+      availableQuantity: asset.available_qty || 0,
       departmentId: asset.department_id,
       departmentName: asset.department_name,
       minimumQty: asset.minimum_qty,

@@ -3,12 +3,13 @@ import axiosInstance from "../utils/axios";
 export type AssetItemStatus = 'AVAILABLE' | 'IN_USE' | 'MAINTENANCE' | 'DISPOSED';
 
 export interface CreateAssetItemDTO {
-  assetId: number;
+  assetId: string;
   assetCodeAC: string;
   assetCode: string;
   serialNumber: string;
   purchaseDate?: string;
   warrantyEnd?: string;
+  quantity?: number;
 }
 
 export interface UpdateAssetItemDTO {
@@ -18,6 +19,7 @@ export interface UpdateAssetItemDTO {
   status?: AssetItemStatus;
   purchaseDate?: string;
   warrantyEnd?: string;
+  quantity?: number;
 }
 
 export interface AssetItem {
@@ -31,6 +33,7 @@ export interface AssetItem {
   status: AssetItemStatus;
   purchaseDate: string;
   warrantyEnd: string;
+  quantity?: number;
   createdAt: string;
   updatedAt: string;
   assetModel?: {
@@ -50,6 +53,8 @@ export interface AssetItemLookup {
   assetCode: string;
   serialNumber: string;
   status: AssetItemStatus;
+  categoryName: string;
+  categoryPrefix: string;
   purchaseDate: string;
   warrantyEnd: string;
   createdAt: string;

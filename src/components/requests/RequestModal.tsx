@@ -42,7 +42,8 @@ interface RequestModalProps {
 
 export interface RequestFormData {
   assetItemCode: string;
-  location: number;
+  quantity: number;
+  locationId: number;
 }
 
 // Scanner Component with useZxing hook
@@ -162,7 +163,8 @@ export default function RequestModal({ open, onClose, onSubmit }: RequestModalPr
 
   const [formData, setFormData] = useState<RequestFormData>({
     assetItemCode: '',
-    location: 0,
+    quantity: 1,
+    locationId: 0,
   });
 
   const loadLocations = useCallback(async () => {
@@ -189,7 +191,8 @@ export default function RequestModal({ open, onClose, onSubmit }: RequestModalPr
       setAssetError('');
       setFormData({
         assetItemCode: '',
-        location: 0,
+        quantity: 1,
+        locationId: 0,
       });
       loadLocations();
     }
@@ -216,7 +219,15 @@ export default function RequestModal({ open, onClose, onSubmit }: RequestModalPr
     const selectedId = Number(event.target.value);
     setFormData((prev) => ({
       ...prev,
-      location: selectedId,
+      locationId: selectedId,
+    }));
+  };
+
+  const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseInt(e.target.value, 10);
+    setFormData((prev) => ({
+      ...prev,
+      quantity: value > 0 ? value : 1,
     }));
   };
 
@@ -232,6 +243,13 @@ export default function RequestModal({ open, onClose, onSubmit }: RequestModalPr
       const response = await getAssetItemByAssetItemCode(assetItemCode.trim());
       if (response.success && response.data) {
         setAssetDetail(response.data);
+        // Set quantity to 1 if categoryPrefix is not 'OUT'
+        if (response.data.categoryPrefix !== 'OUT') {
+          setFormData((prev) => ({
+            ...prev,
+            quantity: 1,
+          }));
+        }
       } else {
         setAssetDetail(null);
         setAssetError('ไม่พบข้อมูลสินทรัพย์จากหมายเลขนี้');
@@ -253,7 +271,7 @@ export default function RequestModal({ open, onClose, onSubmit }: RequestModalPr
       return;
     }
 
-    if (!formData.location) {
+    if (!formData.locationId) {
       setError('กรุณาเลือกสถานที่');
       return;
     }
@@ -265,7 +283,8 @@ export default function RequestModal({ open, onClose, onSubmit }: RequestModalPr
   const handleClose = () => {
     setFormData({
       assetItemCode: '',
-      location: 0,
+      quantity: 1,
+      locationId: 0,
     });
     setError('');
     setAssetDetail(null);
@@ -460,7 +479,7 @@ export default function RequestModal({ open, onClose, onSubmit }: RequestModalPr
               <FormControl fullWidth required>
                 <InputLabel>สถานที่ (Location)</InputLabel>
                 <Select
-                  value={formData.location ? String(formData.location) : ''}
+                  value={formData.locationId ? String(formData.locationId) : ''}
                   onChange={handleLocationChange}
                   label="สถานที่ (Location)"
                   disabled={locationLoading}
@@ -743,6 +762,28 @@ export default function RequestModal({ open, onClose, onSubmit }: RequestModalPr
                     </Stack>
                   </Stack>
                 </Box>
+              )}
+
+              {/* Quantity Field - Show only after asset is found */}
+              {assetDetail && !assetLoading && (
+                <TextField
+                  fullWidth
+                  required
+                  type="number"
+                  name="quantity"
+                  label="จำนวน (Quantity)"
+                  placeholder="กรอกจำนวนที่ต้องการเบิก"
+                  value={formData.quantity}
+                  onChange={handleQuantityChange}
+                  inputProps={{ min: 1 }}
+                  disabled={assetDetail.categoryPrefix !== 'OUT'}
+                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+                  helperText={
+                    assetDetail.categoryPrefix === 'OUT'
+                      ? 'ระบุจำนวนที่ต้องการเบิก'
+                      : 'สินทรัพย์ประเภทนี้เบิกได้ครั้งละ 1 ชิ้นเท่านั้น'
+                  }
+                />
               )}
             </Stack>
           </DialogContent>

@@ -56,6 +56,7 @@ export default function AssetFormPage() {
     serialNumber: '',
     purchaseDate: '',
     warrantyEnd: '',
+    quantity: 1,
   });
 
   const [formData, setFormData] = useState<AssetFormData>({
@@ -67,6 +68,11 @@ export default function AssetFormPage() {
     departmentId: 0,
   });
 
+  const [categoryPrefix, setCategoryPrefix] = useState<string>('');
+  const isOutCategory = (): boolean => {
+    return categoryPrefix === 'OUT';
+  };
+
   useEffect(() => {
     setIsMounted(true);
   }, []);
@@ -75,10 +81,8 @@ export default function AssetFormPage() {
     if (!isMounted) return;
 
     const loadData = async () => {
-      // Always load master data
       await loadMasterData();
 
-      // If editing an existing asset, load both asset detail and items in parallel
       if (isEdit) {
         await Promise.all([
           loadAsset(),
@@ -131,6 +135,9 @@ export default function AssetFormPage() {
           return typeof deptId === 'string' ? parseInt(deptId) : (deptId || 0);
         })(),
       });
+      
+      // Store category_prefix from API response
+      setCategoryPrefix(asset.category_prefix || asset.categoryPrefix || '');
       
       // Store asset detail for later use (e.g., lastCodeAssetItem)
       return asset;
@@ -201,6 +208,7 @@ export default function AssetFormPage() {
       serialNumber: '',
       purchaseDate: '',
       warrantyEnd: '',
+      quantity: 1,
     });
     setOpenModal(true);
   };
@@ -214,6 +222,7 @@ export default function AssetFormPage() {
       serialNumber: '',
       purchaseDate: '',
       warrantyEnd: '',
+      quantity: 1,
     });
   };
 
@@ -246,18 +255,20 @@ export default function AssetFormPage() {
           serialNumber: equipmentForm.serialNumber,
           purchaseDate: equipmentForm.purchaseDate,
           warrantyEnd: equipmentForm.warrantyEnd,
+          quantity: isOutCategory() ? equipmentForm.quantity : 1,
         });
 
         // Reload equipments list after update
         await loadEquipments();
       } else {
         const createData: CreateAssetItemDTO = {
-          assetId: Number(params.id),
+          assetId: String(params.id),
           assetCodeAC: equipmentForm.assetCodeAC,
           assetCode: equipmentForm.assetCode,
           serialNumber: equipmentForm.serialNumber,
           purchaseDate: equipmentForm.purchaseDate,
           warrantyEnd: equipmentForm.warrantyEnd,
+          quantity: isOutCategory() ? equipmentForm.quantity : 1,
         };
 
         await createAssetItem(createData);
@@ -282,6 +293,7 @@ export default function AssetFormPage() {
           serialNumber: freshEquipment.serialNumber || '',
           purchaseDate: freshEquipment.purchaseDate ? freshEquipment.purchaseDate.split('T')[0] : '',
           warrantyEnd: freshEquipment.warrantyEnd ? freshEquipment.warrantyEnd.split('T')[0] : '',
+          quantity: freshEquipment.quantity || 1,
         });
         setOpenModal(true);
         return;
@@ -298,6 +310,7 @@ export default function AssetFormPage() {
       serialNumber: equipment.serialNumber || '',
       purchaseDate: equipment.purchaseDate ? equipment.purchaseDate.split('T')[0] : '',
       warrantyEnd: equipment.warrantyEnd ? equipment.warrantyEnd.split('T')[0] : '',
+      quantity: equipment.quantity || 1,
     });
     setOpenModal(true);
   };
@@ -472,6 +485,7 @@ export default function AssetFormPage() {
                           <TableCell sx={{ fontWeight: 600 }}>รหัสสินทรัพย์</TableCell>
                           <TableCell sx={{ fontWeight: 600 }}>เลข Asset จากบัญชี</TableCell>
                           <TableCell sx={{ fontWeight: 600 }}>เลข Serial Number</TableCell>
+                          <TableCell sx={{ fontWeight: 600 }}>จำนวน</TableCell>
                           <TableCell sx={{ fontWeight: 600 }}>วันที่จัดซื้อ</TableCell>
                           <TableCell sx={{ fontWeight: 600 }}>วันที่หมดประกัน</TableCell>
                           <TableCell sx={{ fontWeight: 600 }}>สถานะ</TableCell>
@@ -481,7 +495,7 @@ export default function AssetFormPage() {
                       <TableBody>
                         {equipments.length === 0 ? (
                           <TableRow>
-                            <TableCell colSpan={7} align="center" sx={{ py: 4, color: 'text.secondary' }}>
+                            <TableCell colSpan={9} align="center" sx={{ py: 4, color: 'text.secondary' }}>
                               ไม่มีข้อมูลอุปกรณ์
                             </TableCell>
                           </TableRow>
@@ -492,6 +506,7 @@ export default function AssetFormPage() {
                               <TableCell>{equipment.assetCode}</TableCell>
                               <TableCell>{equipment.assetCodeAC}</TableCell>
                               <TableCell>{equipment.serialNumber}</TableCell>
+                              <TableCell>{equipment.quantity || 1}</TableCell>
                               <TableCell>{equipment.purchaseDate}</TableCell>
                               <TableCell>{equipment.warrantyEnd}</TableCell>
                               <TableCell>
@@ -584,6 +599,18 @@ export default function AssetFormPage() {
                   value={equipmentForm.warrantyEnd}
                   onChange={(e) => setEquipmentForm(prev => ({ ...prev, warrantyEnd: e.target.value }))}
                   InputLabelProps={{ shrink: true }}
+                />
+
+                <TextField
+                  fullWidth
+                  required
+                  type="number"
+                  label="จำนวน"
+                  value={isOutCategory() ? equipmentForm.quantity : 1}
+                  onChange={(e) => setEquipmentForm(prev => ({ ...prev, quantity: Number(e.target.value) }))}
+                  disabled={!isOutCategory()}
+                  inputProps={{ min: 1 }}
+                  helperText={!isOutCategory() ? 'สินทรัพย์ประเภทนี้กำหนดจำนวนเป็น 1 เสมอ' : ''}
                 />
               </Box>
             </DialogContent>
